@@ -40,11 +40,11 @@ export interface AffectedOptions extends GlobalNxArgs {
   'max-parallel': boolean;
 }
 
-export function affected(
+export async function affected(
   command: string,
   parsedArgs: any,
   args: string[]
-): void {
+): Promise<void> {
   let apps: string[];
   let e2eProjects: string[];
   let projects: string[];
@@ -73,7 +73,8 @@ export function affected(
             !parsedArgs.onlyFailed || !workspaceResults.getResult(project)
         );
     } else {
-      const p = parseFiles(args);
+      const p = await parseFiles(args);
+      console.log(p.files);
       rest = p.rest;
       apps = getAffectedApps(p.files)
         .filter(project => !parsedArgs.exclude.includes(project))

@@ -16,14 +16,15 @@ import * as fs from 'fs';
 import { statSync } from 'fs';
 import * as appRoot from 'app-root-path';
 import { readJsonFile } from '../utils/fileutils';
+import * as _git from 'simple-git/promise';
 
 export type ImplicitDependencies = {
   [key: string]: string[];
 };
 
-export function parseFiles(
+export async function parseFiles(
   args: string[]
-): { files: string[]; rest: string[] } {
+): Promise<{ files: string[]; rest: string[] }> {
   let unnamed = [];
   let named = [];
   args.forEach(a => {
@@ -62,7 +63,12 @@ export function parseFiles(
     };
   } else if (base && head) {
     return {
-      files: getFilesUsingBaseAndHead(base, head),
+      files: Array.from(
+        new Set([
+          ...getFilesUsingBaseAndHead(base, head),
+          ...(await getAngularJsonAffectedFiles(base, head))
+        ])
+      ),
       rest: [...unnamed, ...named]
     };
   } else if (base) {
@@ -70,6 +76,7 @@ export function parseFiles(
       files: Array.from(
         new Set([
           ...getFilesUsingBaseAndHead(base, 'HEAD'),
+          ...(await getAngularJsonAffectedFiles(base, 'HEAD')),
           ...getUncommittedFiles(),
           ...getUntrackedFiles()
         ])
@@ -111,6 +118,34 @@ function getFilesUsingBaseAndHead(base: string, head: string): string[] {
 
 function getFilesFromShash(sha1: string, sha2: string): string[] {
   return parseGitOutput(`git diff --name-only ${sha1} ${sha2}`);
+}
+
+async function getAngularJsonAffectedFiles(
+  base: string,
+  head: string
+): Promise<string[]> {
+  const git = _git(process.cwd());
+  const output = await git.diffSummary([base, '--', 'angular.json']);
+  if (output.insertions + output.insertions === 0) {
+    return [];
+  }
+
+  const [baseJson, headJson] = await Promise.all<any, any>([
+    git.show([`${base}:angular.json`]).then(JSON.parse),
+    git.show([`${head}:angular.json`]).then(JSON.parse)
+  ]);
+
+  const roots = Object.entries<any>(headJson.projects).reduce(
+    (res, [key, proj]) => {
+      if (JSON.stringify(proj) !== JSON.stringify(baseJson.projects[key])) {
+        res.push(proj.root as string);
+      }
+      return res;
+    },
+    [] as string[]
+  );
+  console.log(roots);
+  return roots;
 }
 
 function parseGitOutput(command: string): string[] {

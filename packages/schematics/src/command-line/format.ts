@@ -3,12 +3,12 @@ import * as path from 'path';
 import * as resolve from 'resolve';
 import { getProjectRoots, getTouchedProjects, parseFiles } from './shared';
 
-export function format(args: string[]) {
+export async function format(args: string[]) {
   const command = args[0];
   let patterns: string[];
 
   try {
-    patterns = getPatterns(args);
+    patterns = await getPatterns(args);
   } catch (e) {
     printError(command, e);
     process.exit(1);
@@ -24,9 +24,9 @@ export function format(args: string[]) {
   }
 }
 
-function getPatterns(args: string[]) {
+async function getPatterns(args: string[]) {
   try {
-    const p = parseFiles(args.slice(1));
+    const p = await parseFiles(args.slice(1));
     let patterns = p.files.filter(f => path.extname(f) === '.ts');
     let rest = p.rest;
 
