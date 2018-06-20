@@ -24,6 +24,7 @@ import {
   replaceAppNameWithPath
 } from '@nrwl/schematics/src/utils/cli-config-utils';
 import { formatFiles } from '../../utils/rules/format-files';
+import { updateKarmaConf } from '../../utils/rules/update-karma-conf';
 
 interface NormalizedSchema extends Schema {
   appProjectRoot: string;
@@ -249,6 +250,9 @@ export default function(schema: Schema): Rule {
       updateComponentTemplate(options),
       addNxModule(options),
       options.routing ? addRouterRootConfiguration(options) : noop(),
+      updateKarmaConf({
+        projectName: options.name
+      }),
       formatFiles(options)
     ])(host, context);
   };

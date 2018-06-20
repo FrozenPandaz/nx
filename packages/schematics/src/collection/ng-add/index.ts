@@ -4,7 +4,9 @@ import {
   SchematicContext,
   Tree,
   url,
-  mergeWith
+  mergeWith,
+  apply,
+  template
 } from '@angular-devkit/schematics';
 import { Schema } from './schema';
 import * as path from 'path';
@@ -50,6 +52,7 @@ import { NodePackageInstallTask } from '@angular-devkit/schematics/tasks';
 import { getAppModulePath } from '@schematics/angular/utility/ng-ast-utils';
 import { insertImport } from '@schematics/angular/utility/route-utils';
 import { InsertChange } from '@schematics/angular/utility/change';
+import { updateKarmaConf } from '../../utils/rules/update-karma-conf';
 
 function updatePackageJson() {
   return updateJsonInTree('package.json', packageJson => {
@@ -342,6 +345,10 @@ function updateTsConfigsJson(options: Schema) {
       json.compilerOptions.outDir = `${offset}dist/out-tsc/apps/${
         options.name
       }`;
+      json.excludes = [
+        ...json.excludes,
+        path.relative(app.root, app.architect.options.karmaConfig)
+      ];
     });
 
     // This has to stay using fs since it is created with fs
@@ -350,6 +357,10 @@ function updateTsConfigsJson(options: Schema) {
       json.compilerOptions.outDir = `${offset}dist/out-tsc/apps/${
         options.name
       }`;
+      json.excludes = [
+        ...json.excludes,
+        path.relative(app.root, app.architect.options.karmaConfig)
+      ];
       if (json.files) {
         json.files = json.files.map(file =>
           path.join(path.relative(app.root, app.sourceRoot), file)
@@ -491,12 +502,6 @@ function moveExistingFiles(options: Schema) {
     moveOutOfSrc(
       app.sourceRoot,
       options.name,
-      getFilename(app.architect.test.options.karmaConfig),
-      context
-    );
-    moveOutOfSrc(
-      app.sourceRoot,
-      options.name,
       getFilename(app.architect.build.options.tsConfig),
       context
     );
@@ -514,6 +519,7 @@ function moveExistingFiles(options: Schema) {
         context
       );
     }
+    fs.unlinkSync(app.test.options.karmaConfig);
     moveOutOfSrc(app.sourceRoot, options.name, 'tslint.json', context);
     const oldAppSourceRoot = app.sourceRoot;
     const newAppSourceRoot = join('apps', options.name, app.sourceRoot);
@@ -712,9 +718,14 @@ export default function(schema: Schema): Rule {
     name: toFileName(schema.name),
     npmScope: toFileName(schema.npmScope || schema.name)
   };
+  const templateSource = apply(url('./files'), [
+    template({
+      tmpl: ''
+    })
+  ]);
   return chain([
     checkCanConvertToWorkspace(options),
-    mergeWith(url('./files')),
+    mergeWith(templateSource),
     moveExistingFiles(options),
     createAdditionalFiles(options),
     updatePackageJson(),
@@ -723,6 +734,9 @@ export default function(schema: Schema): Rule {
     updateProjectTsLint(options),
     updateTsConfig(options),
     updateTsConfigsJson(options),
+    updateKarmaConf({
+      projectName: options.name
+    }),
     addNxModule(options),
     addInstallTask(options)
   ]);
