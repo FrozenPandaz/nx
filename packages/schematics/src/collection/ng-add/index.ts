@@ -39,7 +39,8 @@ import { toFileName } from '../../utils/name-utils';
 import {
   updateJsonInTree,
   readJsonInTree,
-  addImportToModule
+  addImportToModule,
+  getProjectConfig
 } from '../../utils/ast-utils';
 import {
   parseTarget,
@@ -53,6 +54,7 @@ import { getAppModulePath } from '@schematics/angular/utility/ng-ast-utils';
 import { insertImport } from '@schematics/angular/utility/route-utils';
 import { InsertChange } from '@schematics/angular/utility/change';
 import { updateKarmaConf } from '../../utils/rules/update-karma-conf';
+import { findNodes } from '@schematics/angular/utility/ast-utils';
 
 function updatePackageJson() {
   return updateJsonInTree('package.json', packageJson => {
@@ -228,10 +230,10 @@ function updateAngularCLIJson(options: Schema): Rule {
       main: convertPath(options.name, testConfig.options.main),
       polyfills: convertPath(options.name, testConfig.options.polyfills),
       tsConfig: path.join(app.root, getFilename(testConfig.options.tsConfig)),
-      karmaConfig: path.join(
-        app.root,
-        getFilename(testConfig.options.karmaConfig)
-      ),
+      // karmaConfig: path.join(
+      //   app.root,
+      //   getFilename(testConfig.options.karmaConfig)
+      // ),
       assets: testConfig.options.assets.map(
         asset =>
           asset.startsWith(oldSourceRoot)
@@ -333,7 +335,7 @@ function serializeLoadChildren({
 }
 
 function updateTsConfigsJson(options: Schema) {
-  return (host: Tree) => {
+  return (host: Tree, context: SchematicContext) => {
     const angularJson = readJsonInTree(host, 'angular.json');
     const app = angularJson.projects[options.name];
     const e2eProject = getE2eProject(angularJson);
@@ -345,9 +347,10 @@ function updateTsConfigsJson(options: Schema) {
       json.compilerOptions.outDir = `${offset}dist/out-tsc/apps/${
         options.name
       }`;
-      json.excludes = [
-        ...json.excludes,
-        path.relative(app.root, app.architect.options.karmaConfig)
+      json.exclude = json.exclude || [];
+      json.exclude = [
+        ...json.exclude,
+        path.relative(app.root, app.architect.test.options.karmaConfig)
       ];
     });
 
@@ -357,9 +360,10 @@ function updateTsConfigsJson(options: Schema) {
       json.compilerOptions.outDir = `${offset}dist/out-tsc/apps/${
         options.name
       }`;
-      json.excludes = [
-        ...json.excludes,
-        path.relative(app.root, app.architect.options.karmaConfig)
+      json.exclude = json.exclude || [];
+      json.exclude = [
+        ...json.exclude,
+        path.relative(app.root, app.architect.test.options.karmaConfig)
       ];
       if (json.files) {
         json.files = json.files.map(file =>
@@ -519,7 +523,26 @@ function moveExistingFiles(options: Schema) {
         context
       );
     }
-    fs.unlinkSync(app.test.options.karmaConfig);
+    const project = getProjectConfig(host, angularJson.defaultProject);
+    const sourceFile = ts.createSourceFile(
+      project.architect.test.options.karmaConfig,
+      host.read(project.architect.test.options.karmaConfig).toString(),
+      ts.ScriptTarget.Latest,
+      true
+    );
+    const setCall = findNodes(sourceFile, ts.SyntaxKind.CallExpression).find(
+      (callExpression: ts.CallExpression) => {
+        return (
+          ts.isPropertyAccessExpression(callExpression.expression) &&
+          ts.isIdentifier(callExpression.expression.expression) &&
+          ts.isIdentifier(callExpression.expression.name) &&
+          callExpression.expression.expression.text === 'config' &&
+          callExpression.expression.name.text === 'set'
+        );
+      }
+    ) as ts.CallExpression;
+    const config = setCall.arguments[0].getText(sourceFile);
+    console.log(config);
     moveOutOfSrc(app.sourceRoot, options.name, 'tslint.json', context);
     const oldAppSourceRoot = app.sourceRoot;
     const newAppSourceRoot = join('apps', options.name, app.sourceRoot);
@@ -733,10 +756,10 @@ export default function(schema: Schema): Rule {
     updateTsLint(),
     updateProjectTsLint(options),
     updateTsConfig(options),
-    updateTsConfigsJson(options),
     updateKarmaConf({
       projectName: options.name
     }),
+    updateTsConfigsJson(options),
     addNxModule(options),
     addInstallTask(options)
   ]);

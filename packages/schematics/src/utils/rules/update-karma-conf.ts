@@ -15,7 +15,7 @@ import {
 export function updateKarmaConf(options: { projectName: string }): Rule {
   return (host: Tree, context: SchematicContext) => {
     const project = getProjectConfig(host, options.projectName);
-    const projectRoot = project.root;
+    const projectRoot = project.root.replace(/\/$/, '');
     const oldKarmaConfPath = project.architect.test.options.karmaConfig;
     const newKarmaConfPath = join(projectRoot, 'karma.conf.ts');
 
