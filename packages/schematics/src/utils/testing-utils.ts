@@ -16,7 +16,14 @@ export function createEmptyWorkspace(tree: Tree): Tree {
     '/angular.json',
     JSON.stringify({ projects: {}, newProjectRoot: '' })
   );
-  tree.create('/package.json', JSON.stringify({}));
+  tree.create(
+    '/package.json',
+    JSON.stringify({
+      dependencies: {
+        '@angular/core': '0.0.0'
+      }
+    })
+  );
   tree.create('/nx.json', JSON.stringify({ npmScope: 'proj', projects: {} }));
   tree.create(
     '/tsconfig.json',
@@ -103,6 +110,7 @@ export function createApp(
       projects: {
         [appName]: {
           root: `apps/${appName}/src`,
+          projectType: 'application',
           architect: {
             build: {
               options: {

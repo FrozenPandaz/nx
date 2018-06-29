@@ -1,0 +1,7 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "id": "universal",
+  "title": "Add capability to run on a server to existing App",
+  "description": "Add capability to run on a server to existing App",
+  "type": "object"
+}

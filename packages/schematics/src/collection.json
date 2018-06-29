@@ -1,7 +1,7 @@
 {
   "name": "nx",
   "version": "0.1",
-  "extends": "@ngrx/schematics",
+  "extends": ["@ngrx/schematics", "@schematics/angular"],
   "schematics": {
     "ng-add": {
       "factory": "./collection/ng-add",
@@ -28,6 +28,13 @@
       "schema": "./collection/library/schema.json",
       "aliases": ["lib"],
       "description": "Create a library"
+    },
+
+    "universal": {
+      "description":
+        "Extend an Angular Application with the capability to run on a server",
+      "schema": "./collection/universal/schema.json",
+      "factory": "./collection/universal"
     },
 
     "ngrx": {
