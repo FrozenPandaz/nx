@@ -9,7 +9,8 @@ import { map } from 'rxjs/operators';
 
 import * as path from 'path';
 
-import { runCLI as runJest } from 'jest';
+const { runCLI } = require('jest');
+const runJest = runCLI;
 
 export interface JestBuilderOptions {
   jestConfig: string;
