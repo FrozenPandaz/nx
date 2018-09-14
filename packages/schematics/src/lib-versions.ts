@@ -14,12 +14,14 @@ export const typescriptVersion = '~2.7.2';
 export const rxjsVersion = '^6.0.0';
 export const jestVersion = '^23.0.0';
 export const jasmineMarblesVersion = '0.3.1';
+export const nestVersion = '5.3.6';
 
 export const libVersions = {
   angularVersion,
   angularDevkitVersion,
   angularCliVersion,
   angularJsVersion,
+  nestVersion,
   ngrxVersion,
   ngrxStoreFreezeVersion,
   nxVersion,
