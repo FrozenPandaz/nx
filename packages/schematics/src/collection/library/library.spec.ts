@@ -26,18 +26,18 @@ describe('lib', () => {
         { name: 'myLib', publishable: true },
         appTree
       );
-
-      let ngPackageProd = readJsonInTree(
-        publishableTree,
-        'libs/my-lib/ng-package.prod.json'
-      );
       let ngPackage = readJsonInTree(
         publishableTree,
         'libs/my-lib/ng-package.json'
       );
-
-      expect(ngPackageProd.dest).toEqual('../../dist/libs/my-lib');
       expect(ngPackage.dest).toEqual('../../dist/libs/my-lib');
+
+      // TODO: remove after cli 6.2
+      let ngPackageProd = readJsonInTree(
+        publishableTree,
+        'libs/my-lib/ng-package.prod.json'
+      );
+      expect(ngPackageProd.dest).toEqual('../../dist/libs/my-lib');
     });
 
     it('should not update package.json by default', () => {
@@ -202,16 +202,18 @@ describe('lib', () => {
         { name: 'myLib', directory: 'myDir', publishable: true },
         appTree
       );
-      let ngPackageProd = readJsonInTree(
-        publishableTree,
-        'libs/my-dir/my-lib/ng-package.prod.json'
-      );
       let ngPackage = readJsonInTree(
         publishableTree,
         'libs/my-dir/my-lib/ng-package.json'
       );
-      expect(ngPackageProd.dest).toEqual('../../../dist/libs/my-dir/my-lib');
       expect(ngPackage.dest).toEqual('../../../dist/libs/my-dir/my-lib');
+
+      // TODO: remove after cli 6.2
+      let ngPackageProd = readJsonInTree(
+        publishableTree,
+        'libs/my-dir/my-lib/ng-package.prod.json'
+      );
+      expect(ngPackageProd.dest).toEqual('../../../dist/libs/my-dir/my-lib');
     });
 
     it('should update angular.json', () => {

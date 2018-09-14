@@ -205,26 +205,34 @@ function addChildren(options: NormalizedSchema): Rule {
 }
 
 function updateNgPackage(options: NormalizedSchema): Rule {
-  if (!options.publishable) {
-    return noop();
-  }
-  const dest = `${offsetFromRoot(options.projectRoot)}dist/libs/${
-    options.projectDirectory
-  }`;
-  return chain([
-    updateJsonInTree(`${options.projectRoot}/ng-package.prod.json`, json => {
-      return {
-        ...json,
-        dest
-      };
-    }),
-    updateJsonInTree(`${options.projectRoot}/ng-package.json`, json => {
-      return {
-        ...json,
-        dest
-      };
-    })
-  ]);
+  return (host: Tree, context: SchematicContext) => {
+    if (!options.publishable) {
+      return noop();
+    }
+    const dest = `${offsetFromRoot(options.projectRoot)}dist/libs/${
+      options.projectDirectory
+    }`;
+    return chain([
+      updateJsonInTree(`${options.projectRoot}/ng-package.json`, json => {
+        return {
+          ...json,
+          dest
+        };
+      }),
+      // TODO: remove after cli 6.2
+      host.exists(`${options.projectRoot}/ng-package.prod.json`)
+        ? updateJsonInTree(
+            `${options.projectRoot}/ng-package.prod.json`,
+            json => {
+              return {
+                ...json,
+                dest
+              };
+            }
+          )
+        : noop()
+    ])(host, context);
+  };
 }
 
 function updateProject(options: NormalizedSchema): Rule {
@@ -238,7 +246,10 @@ function updateProject(options: NormalizedSchema): Rule {
 
     if (!options.publishable) {
       host.delete(path.join(options.projectRoot, 'ng-package.json'));
-      host.delete(path.join(options.projectRoot, 'ng-package.prod.json'));
+      // TODO: remove after cli 6.2
+      if (host.exists(path.join(options.projectRoot, 'ng-package.prod.json'))) {
+        host.delete(path.join(options.projectRoot, 'ng-package.prod.json'));
+      }
       host.delete(path.join(options.projectRoot, 'package.json'));
     }
 
