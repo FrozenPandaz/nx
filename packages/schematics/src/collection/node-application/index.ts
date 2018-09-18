@@ -14,26 +14,20 @@ import {
 } from '@angular-devkit/schematics';
 import { join, normalize, Path } from '@angular-devkit/core';
 import { NodePackageInstallTask } from '@angular-devkit/schematics/tasks';
-import { Schema } from './schema';
+import { Schema, NormalizedSchema } from './schema';
 import { offsetFromRoot } from '../../utils/common';
 import { replaceAppNameWithPath } from '../../utils/cli-config-utils';
 import { excludeUnnecessaryFiles } from '../../utils/rules/filter-tree';
 import { updateJsonInTree } from '../../utils/ast-utils';
 import { toFileName } from '../../utils/name-utils';
 import { nestVersion } from '../../lib-versions';
-
-interface NormalizedSchema extends Schema {
-  appProjectRoot: Path;
-  e2eProjectName: string;
-  e2eProjectRoot: Path;
-  parsedTags: string[];
-}
+import { generateNestApp } from './rules/nestjs';
 
 function createApplicationCode(options: NormalizedSchema): Rule {
   return (host: Tree, context: SchematicContext) => {
     host.delete(join(options.appProjectRoot, 'src/main.ts'));
     return mergeWith(
-      apply(url('./files'), [
+      apply(url('./files/nest'), [
         template({
           tmpl: '',
           name: options.name
@@ -46,6 +40,23 @@ function createApplicationCode(options: NormalizedSchema): Rule {
 
 function addInstall(host: Tree, context: SchematicContext) {
   context.addTask(new NodePackageInstallTask());
+}
+
+function addSource(options: NormalizedSchema) {
+  switch (options.framework) {
+    case 'apollo':
+      return generateNestApp(options);
+      break;
+    case 'express':
+      return generateNestApp(options);
+      break;
+    case 'nestjs':
+      return generateNestApp(options);
+      break;
+    case 'none':
+      return generateEmptyApp(options);
+      break;
+  }
 }
 
 function addDependencies(options: NormalizedSchema) {
@@ -179,13 +190,15 @@ function removeE2e(options: NormalizedSchema): Rule {
 function removeAppFiles(options: NormalizedSchema): Rule {
   return (host: Tree) => {
     [
+      'src/main.ts',
       'src/favicon.ico',
       'src/index.html',
       'src/polyfills.ts',
       'src/styles.css',
       'browserslist',
       'src/app/app.module.ts',
-      'src/app/app.component.ts'
+      'src/app/app.component.ts',
+      'src/app/app.component.spec.ts'
     ].forEach(path => {
       host.delete(join(options.appProjectRoot, path));
     });
@@ -210,7 +223,6 @@ export default function(schema: Schema): Rule {
         name: options.name,
         inlineStyle: true,
         inlineTemplate: true,
-        skipTests: true,
         skipPackageJson: true
       }),
       excludeUnnecessaryFiles(),
@@ -223,8 +235,7 @@ export default function(schema: Schema): Rule {
       updateNxJson(options),
       updateAppTsconfigJson(options),
       updateTslintJson(options),
-      createApplicationCode(options),
-      addDependencies(options),
+      addSourceCode(options),
       options.unitTestRunner === 'jest'
         ? schematic('jest-project', {
             project: options.name,
