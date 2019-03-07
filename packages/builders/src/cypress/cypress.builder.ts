@@ -9,7 +9,7 @@ import { catchError, concatMap, tap, map, take } from 'rxjs/operators';
 import { ChildProcess, fork } from 'child_process';
 import { copySync, removeSync } from 'fs-extra';
 import { fromPromise } from 'rxjs/internal-compatibility';
-import { DevServerBuilderOptions } from '@angular-devkit/build-angular';
+import { Schema as DevServerBuilderOptions } from '@angular-devkit/build-angular/src/dev-server/schema';
 import { readFile } from '@angular-devkit/schematics/tools/file-system-utility';
 import { getSystemPath, join } from '@angular-devkit/core';
 import * as path from 'path';
@@ -72,7 +72,8 @@ export default class CypressBuilder implements Builder<CypressBuilderOptions> {
    */
   run(
     builderConfig: BuilderConfiguration<CypressBuilderOptions>
-  ): Observable<BuildEvent> {
+    // ): Observable<BuildEvent> {
+  ): any {
     const options = builderConfig.options;
     const tsconfigJson = JSON.parse(readFile(options.tsConfig));
 

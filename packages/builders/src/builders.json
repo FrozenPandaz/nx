@@ -27,6 +27,7 @@
       "description": "Run Jest unit tests"
     },
     "cypress": {
+      "implementation": "./cypress/cypress.builder.impl",
       "class": "./cypress/cypress.builder",
       "schema": "./cypress/schema.json",
       "description": "Run Cypress e2e tests"

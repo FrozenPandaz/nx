@@ -43,7 +43,8 @@ export default class BuildNodeBuilder
 
   run(
     builderConfig: BuilderConfiguration<BuildNodeBuilderOptions>
-  ): Observable<NodeBuildEvent> {
+    // ): Observable<BuildEvent> {
+  ): any {
     const options = normalizeBuildOptions(
       builderConfig.options,
       this.root,

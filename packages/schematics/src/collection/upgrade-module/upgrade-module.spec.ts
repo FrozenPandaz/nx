@@ -1,6 +1,6 @@
 import { SchematicTestRunner } from '@angular-devkit/schematics/testing';
 import * as path from 'path';
-import { Tree, VirtualTree } from '@angular-devkit/schematics';
+import { Tree } from '@angular-devkit/schematics';
 import {
   createApp,
   createEmptyWorkspace,
@@ -13,7 +13,7 @@ describe('upgrade-module', () => {
   let appTree: Tree;
 
   beforeEach(() => {
-    appTree = new VirtualTree();
+    appTree = Tree.empty();
     appTree = createEmptyWorkspace(appTree);
     appTree = createApp(appTree, 'myapp');
   });

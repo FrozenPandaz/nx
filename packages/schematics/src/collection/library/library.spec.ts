@@ -1,4 +1,4 @@
-import { Tree, VirtualTree } from '@angular-devkit/schematics';
+import { Tree } from '@angular-devkit/schematics';
 import {
   createApp,
   createEmptyWorkspace,
@@ -14,7 +14,7 @@ describe('lib', () => {
   let appTree: Tree;
 
   beforeEach(() => {
-    appTree = new VirtualTree();
+    appTree = Tree.empty();
     appTree = createEmptyWorkspace(appTree);
   });
 

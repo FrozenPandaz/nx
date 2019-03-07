@@ -13,7 +13,7 @@ describe('application', () => {
   let appTree: Tree;
 
   beforeEach(() => {
-    appTree = new VirtualTree();
+    appTree = Tree.empty();
   });
 
   it('should generate files', () => {

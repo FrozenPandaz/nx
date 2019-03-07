@@ -1,13 +1,13 @@
 import { SchematicTestRunner } from '@angular-devkit/schematics/testing';
 import * as path from 'path';
-import { Tree, VirtualTree } from '@angular-devkit/schematics';
+import { Tree } from '@angular-devkit/schematics';
 import { schematicRunner } from '@nrwl/schematics/src/utils/testing-utils';
 
 describe('workspace', () => {
   let appTree: Tree;
 
   beforeEach(() => {
-    appTree = new VirtualTree();
+    appTree = Tree.empty();
   });
 
   it('should error if no package.json is present', () => {

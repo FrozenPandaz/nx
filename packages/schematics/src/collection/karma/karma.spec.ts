@@ -1,4 +1,4 @@
-import { Tree, VirtualTree } from '@angular-devkit/schematics';
+import { Tree } from '@angular-devkit/schematics';
 import { createEmptyWorkspace, runSchematic } from '../../utils/testing-utils';
 import { readJsonInTree } from '@nrwl/schematics/src/utils/ast-utils';
 
@@ -6,7 +6,7 @@ describe('karma', () => {
   let appTree: Tree;
 
   beforeEach(() => {
-    appTree = new VirtualTree();
+    appTree = Tree.empty();
     appTree = createEmptyWorkspace(appTree);
   });
 

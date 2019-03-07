@@ -40,7 +40,8 @@ export class NodeExecuteBuilder implements Builder<NodeExecuteBuilderOptions> {
 
   run(
     target: BuilderConfiguration<NodeExecuteBuilderOptions>
-  ): Observable<BuildEvent> {
+    // ): Observable<BuildEvent> {
+  ): any {
     const options = target.options;
     return this.runWaitUntilTargets(options).pipe(
       concatMap(v => {
@@ -121,7 +122,8 @@ export class NodeExecuteBuilder implements Builder<NodeExecuteBuilderOptions> {
 
   private startBuild(
     options: NodeExecuteBuilderOptions
-  ): Observable<NodeBuildEvent> {
+    // ): Observable<NodeBuildEvent> {
+  ): any {
     const builderConfig = this.getBuildBuilderConfig(options);
 
     return this.context.architect.getBuilderDescription(builderConfig).pipe(

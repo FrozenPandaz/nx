@@ -2,7 +2,7 @@ import {
   SchematicTestRunner,
   UnitTestTree
 } from '@angular-devkit/schematics/testing';
-import { Tree, VirtualTree } from '@angular-devkit/schematics';
+import { Tree } from '@angular-devkit/schematics';
 import { getFileContent } from '@schematics/angular/utility/test';
 import { readJsonInTree } from '../../utils/ast-utils';
 
@@ -22,7 +22,7 @@ describe('ngrx', () => {
   let appTree: Tree;
 
   beforeEach(() => {
-    appTree = new VirtualTree();
+    appTree = Tree.empty();
     appTree = createEmptyWorkspace(appTree);
     appTree = createApp(appTree, 'myapp');
   });

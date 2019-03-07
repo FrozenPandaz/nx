@@ -1,8 +1,8 @@
 import {
   AssetPattern,
-  AssetPatternObject,
-  NormalizedBrowserBuilderSchema
+  AssetPatternObject
 } from '@angular-devkit/build-angular';
+import { NormalizedBrowserBuilderSchema } from '@angular-devkit/build-angular/src/utils';
 import { Path, normalize } from '@angular-devkit/core';
 import { resolve, dirname, relative, basename } from 'path';
 import { statSync } from 'fs';

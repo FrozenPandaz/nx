@@ -35,7 +35,8 @@ export interface JestBuilderOptions {
 export default class JestBuilder implements Builder<JestBuilderOptions> {
   run(
     builderConfig: BuilderConfiguration<JestBuilderOptions>
-  ): Observable<BuildEvent> {
+    // ): Observable<BuildEvent> {
+  ): any {
     const options = builderConfig.options;
     const config: any = {
       watch: options.watch,

@@ -21,7 +21,8 @@ export default class RunCommandsBuilder
   implements Builder<RunCommandsBuilderOptions> {
   run(
     config: BuilderConfiguration<RunCommandsBuilderOptions>
-  ): Observable<BuildEvent> {
+    // ): Observable<BuildEvent> {
+  ): any {
     return Observable.create(async observer => {
       if (!config || !config.options || !config.options.commands) {
         observer.error(
