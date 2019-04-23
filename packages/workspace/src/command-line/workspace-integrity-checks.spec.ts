@@ -4,7 +4,7 @@ import { ProjectType } from './affected-apps';
 describe('WorkspaceIntegrityChecks', () => {
   const packageJson = {
     dependencies: {
-      '@nrwl/nx': '1.2.3'
+      '@nrwl/angular': '1.2.3'
     },
     devDependencies: {
       '@nrwl/workspace': '1.2.3'
@@ -100,15 +100,22 @@ describe('WorkspaceIntegrityChecks', () => {
   });
 
   describe('package.json is consistent', () => {
-    it('should not error when @nrwl/nx and @nrwl/workspace are in sync', () => {
+    it('should not error when all packages are in sync', () => {
       const c = new WorkspaceIntegrityChecks([], [], packageJson);
       expect(c.run().length).toEqual(0);
     });
 
-    it('should error when @nrwl/nx and @nrwl/workspace are not in sync', () => {
+    it('should error when all packages are not in sync', () => {
       const c = new WorkspaceIntegrityChecks([], [], {
         dependencies: {
-          '@nrwl/nx': '1.2.3'
+          '@nrwl/angular': '1.2.3',
+          '@nrwl/cypress': '1.2.3',
+          '@nrwl/express': '1.2.3',
+          '@nrwl/jest': '1.2.3',
+          '@nrwl/nest': '1.2.3',
+          '@nrwl/node': '1.2.3',
+          '@nrwl/react': '1.2.3',
+          '@nrwl/web': '1.2.3'
         },
         devDependencies: {
           '@nrwl/workspace': '4.5.6'
@@ -116,9 +123,16 @@ describe('WorkspaceIntegrityChecks', () => {
       });
       const errors = c.run();
       expect(errors.length).toEqual(1);
-      expect(errors[0].errors[0]).toEqual(
-        `The versions of the @nrwl/nx and @nrwl/workspace packages must be the same.`
-      );
+      expect(errors[0].errors).toEqual([
+        `The versions of the @nrwl/angular and @nrwl/workspace packages must be the same.`,
+        `The versions of the @nrwl/cypress and @nrwl/workspace packages must be the same.`,
+        `The versions of the @nrwl/express and @nrwl/workspace packages must be the same.`,
+        `The versions of the @nrwl/jest and @nrwl/workspace packages must be the same.`,
+        `The versions of the @nrwl/nest and @nrwl/workspace packages must be the same.`,
+        `The versions of the @nrwl/node and @nrwl/workspace packages must be the same.`,
+        `The versions of the @nrwl/react and @nrwl/workspace packages must be the same.`,
+        `The versions of the @nrwl/web and @nrwl/workspace packages must be the same.`
+      ]);
     });
   });
 });

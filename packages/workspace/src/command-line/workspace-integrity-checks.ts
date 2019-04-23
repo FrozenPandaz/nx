@@ -1,5 +1,16 @@
 import { ProjectNode } from './affected-apps';
 
+const packages = [
+  '@nrwl/angular',
+  '@nrwl/cypress',
+  '@nrwl/express',
+  '@nrwl/jest',
+  '@nrwl/nest',
+  '@nrwl/node',
+  '@nrwl/react',
+  '@nrwl/web'
+];
+
 export interface ErrorGroup {
   header: string;
   errors: string[];
@@ -21,20 +32,25 @@ export class WorkspaceIntegrityChecks {
   }
 
   private packageJsonConsistencyCheck(): ErrorGroup[] {
-    const nx = this.packageJson.dependencies['@nrwl/nx'];
-    const schematics = this.packageJson.devDependencies['@nrwl/workspace'];
-    if (schematics && nx && nx !== schematics) {
-      return [
-        {
-          header: 'The package.json is inconsistent',
-          errors: [
-            'The versions of the @nrwl/nx and @nrwl/workspace packages must be the same.'
-          ]
-        }
-      ];
-    } else {
-      return [];
-    }
+    const workspaceVersion =
+      this.packageJson.devDependencies['@nrwl/workspace'] ||
+      this.packageJson.dependencies['@nrwl/workspace'];
+    const errors: string[] = packages
+      .filter(pkg => {
+        const version =
+          this.packageJson.dependencies[pkg] ||
+          this.packageJson.devDependencies[pkg];
+
+        return version && version !== workspaceVersion;
+      })
+      .map(
+        pkg =>
+          `The versions of the ${pkg} and @nrwl/workspace packages must be the same.`
+      );
+
+    return errors.length === 0
+      ? []
+      : [{ header: 'The package.json is inconsistent', errors }];
   }
 
   private projectWithoutFilesCheck(): ErrorGroup[] {
