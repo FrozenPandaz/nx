@@ -243,7 +243,6 @@ export default function(): Rule {
     fixCypressConfigs,
     switchToEs2015,
     updateProjects,
-    displayInformation,
-    updateAngularCLI
+    displayInformation
   ]);
 }

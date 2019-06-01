@@ -422,7 +422,6 @@ export default function(): Rule {
   return chain([
     addExtensionRecommendations,
     addDotEnv,
-    updateAngularCLI,
     migrateNgrx,
     updateNgrx,
     setDefaults,

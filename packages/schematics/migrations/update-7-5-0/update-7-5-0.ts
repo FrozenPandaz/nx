@@ -19,5 +19,5 @@ const updateTypescript = updateJsonInTree('package.json', json => {
 });
 
 export default function(): Rule {
-  return chain([updateTypescript, updateAngularCLI]);
+  return chain([updateTypescript]);
 }

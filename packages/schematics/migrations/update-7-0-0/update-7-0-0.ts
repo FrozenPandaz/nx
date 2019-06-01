@@ -16,18 +16,6 @@ export default function(): Rule {
       }
 
       return json;
-    }),
-    externalSchematic('@schematics/update', 'update', {
-      packages: ['@angular/core'],
-      from: '6.1.0',
-      to: '7.0.0',
-      force: true
-    }),
-    externalSchematic('@schematics/update', 'update', {
-      packages: ['@angular/cli'],
-      from: '6.2.0',
-      to: '7.0.1',
-      force: true
     })
   ]);
 }
