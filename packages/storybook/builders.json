@@ -5,6 +5,11 @@
       "implementation": "./src/builders/storybook/storybook.impl",
       "schema": "./src/builders/storybook/schema.json",
       "description": "Serve Storybook"
+    },
+    "build": {
+      "implementation": "./src/builders/storybook-build/storybook-build.impl",
+      "schema": "./src/builders/storybook-build/schema.json",
+      "description": "Build Storybook"
     }
   }
 }
