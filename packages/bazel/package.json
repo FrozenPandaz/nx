@@ -32,15 +32,23 @@
     "requirements": {},
     "migrations": "./migrations.json",
     "packageGroup": [
-      "@nrwl/workspace",
       "@nrwl/angular",
+      "@nrwl/bazel",
+      "@nrwl/cli",
       "@nrwl/cypress",
+      "@nrwl/eslint-plugin-nx",
       "@nrwl/express",
       "@nrwl/jest",
+      "@nrwl/linter",
       "@nrwl/nest",
+      "@nrwl/next",
       "@nrwl/node",
       "@nrwl/react",
-      "@nrwl/web"
+      "@nrwl/schematics",
+      "@nrwl/storybook",
+      "@nrwl/tao",
+      "@nrwl/web",
+      "@nrwl/workspace"
     ]
   },
   "dependencies": {

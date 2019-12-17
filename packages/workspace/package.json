@@ -31,30 +31,38 @@
     "requirements": {},
     "migrations": "./migrations.json",
     "packageGroup": [
-      "@nrwl/workspace",
       "@nrwl/angular",
+      "@nrwl/bazel",
+      "@nrwl/cli",
       "@nrwl/cypress",
+      "@nrwl/eslint-plugin-nx",
       "@nrwl/express",
       "@nrwl/jest",
+      "@nrwl/linter",
       "@nrwl/nest",
+      "@nrwl/next",
       "@nrwl/node",
       "@nrwl/react",
-      "@nrwl/web"
+      "@nrwl/schematics",
+      "@nrwl/storybook",
+      "@nrwl/tao",
+      "@nrwl/web",
+      "@nrwl/workspace"
     ]
   },
   "peerDependencies": {
-    "prettier": "^1.18.2"
+    "prettier": "1.18.2"
   },
   "dependencies": {
     "@angular-devkit/core": "8.3.14",
     "@angular-devkit/schematics": "8.3.14",
     "cosmiconfig": "4.0.0",
-    "fs-extra": "6.0.0",
+    "fs-extra": "8.1.0",
     "ignore": "5.0.4",
     "npm-run-all": "4.1.5",
     "opn": "^5.3.0",
-    "rxjs": "^6.4.0",
-    "semver": "5.4.1",
+    "rxjs": "~6.4.0",
+    "semver": "6.3.0",
     "strip-json-comments": "2.0.1",
     "tmp": "0.0.33",
     "yargs-parser": "10.0.0",

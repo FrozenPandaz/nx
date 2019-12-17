@@ -26,7 +26,26 @@
   "builders": "./builders.json",
   "ng-update": {
     "requirements": {},
-    "migrations": "./migrations.json"
+    "migrations": "./migrations.json",
+    "packageGroup": [
+      "@nrwl/angular",
+      "@nrwl/bazel",
+      "@nrwl/cli",
+      "@nrwl/cypress",
+      "@nrwl/eslint-plugin-nx",
+      "@nrwl/express",
+      "@nrwl/jest",
+      "@nrwl/linter",
+      "@nrwl/nest",
+      "@nrwl/next",
+      "@nrwl/node",
+      "@nrwl/react",
+      "@nrwl/schematics",
+      "@nrwl/storybook",
+      "@nrwl/tao",
+      "@nrwl/web",
+      "@nrwl/workspace"
+    ]
   },
   "peerDependencies": {
     "@nrwl/workspace": "*"
@@ -42,9 +61,9 @@
     "copy-webpack-plugin": "5.0.3",
     "fork-ts-checker-webpack-plugin": "^3.1.1",
     "license-webpack-plugin": "2.1.2",
-    "source-map-support": "0.5.12",
+    "source-map-support": "0.5.13",
     "tree-kill": "1.2.1",
-    "ts-loader": "5.4.5",
+    "ts-loader": "6.2.1",
     "tsconfig-paths-webpack-plugin": "3.2.0",
     "webpack": "4.41.2",
     "webpack-merge": "4.2.1",
