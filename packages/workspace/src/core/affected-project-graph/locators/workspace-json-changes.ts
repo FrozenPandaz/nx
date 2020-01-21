@@ -8,7 +8,7 @@ import { TouchedProjectLocator } from '../affected-project-graph-models';
 
 export const getTouchedProjectsInWorkspaceJson: TouchedProjectLocator<
   WholeFileChange | JsonChange
-> = (touchedFiles, workspaceJson): string[] => {
+> = (touchedFiles, nodes): string[] => {
   const workspaceChange = touchedFiles.find(
     change => change.file === workspaceFileName()
   );
@@ -29,7 +29,7 @@ export const getTouchedProjectsInWorkspaceJson: TouchedProjectLocator<
       return false;
     })
   ) {
-    return Object.keys(workspaceJson.projects);
+    return Object.keys(nodes);
   }
 
   const touched = [];
@@ -38,11 +38,11 @@ export const getTouchedProjectsInWorkspaceJson: TouchedProjectLocator<
       return;
     }
 
-    if (workspaceJson.projects[change.path[1]]) {
+    if (nodes[change.path[1]]) {
       touched.push(change.path[1]);
     } else {
       // The project was deleted so affect all projects
-      touched.push(...Object.keys(workspaceJson.projects));
+      touched.push(...Object.keys(nodes));
     }
   });
   return touched;

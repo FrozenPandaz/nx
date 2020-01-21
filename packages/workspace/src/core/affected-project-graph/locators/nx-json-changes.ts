@@ -1,10 +1,10 @@
 import { isWholeFileChange, WholeFileChange } from '../../file-utils';
-import { DiffType, isJsonChange, JsonChange } from '../../../utils/json-diff';
+import { isJsonChange, JsonChange } from '../../../utils/json-diff';
 import { TouchedProjectLocator } from '../affected-project-graph-models';
 
 export const getTouchedProjectsInNxJson: TouchedProjectLocator<
   WholeFileChange | JsonChange
-> = (touchedFiles, workspaceJson, nxJson): string[] => {
+> = (touchedFiles, nodes): string[] => {
   const nxJsonChange = touchedFiles.find(change => change.file === 'nx.json');
   if (!nxJsonChange) {
     return [];
@@ -23,7 +23,7 @@ export const getTouchedProjectsInNxJson: TouchedProjectLocator<
       return false;
     })
   ) {
-    return Object.keys(nxJson.projects);
+    return Object.keys(nodes);
   }
 
   const touched = [];
@@ -32,11 +32,11 @@ export const getTouchedProjectsInNxJson: TouchedProjectLocator<
       return;
     }
 
-    if (nxJson.projects[change.path[1]]) {
+    if (nodes[change.path[1]]) {
       touched.push(change.path[1]);
     } else {
       // The project was deleted so affect all projects
-      touched.push(...Object.keys(nxJson.projects));
+      touched.push(...Object.keys(nodes));
     }
   });
   return touched;

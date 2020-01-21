@@ -1,11 +1,10 @@
 import * as path from 'path';
 import * as fs from 'fs';
-import { appRootPath } from '../utils/app-root';
-import { extname } from 'path';
+import { extname, join } from 'path';
 import { jsonDiff } from '../utils/json-diff';
 import { readFileSync } from 'fs';
 import { execSync } from 'child_process';
-import { readJsonFile } from '../utils/fileutils';
+import { appRootPath, readJsonFile } from '../utils/fileutils';
 import { Environment, NxJson } from './shared-interfaces';
 import { ProjectGraphNode } from './project-graph';
 import { WorkspaceResults } from '../command-line/workspace-results';
@@ -146,16 +145,20 @@ function readFileIfExisting(path: string) {
   return fs.existsSync(path) ? fs.readFileSync(path, 'UTF-8').toString() : '';
 }
 
-export function readWorkspaceJson(): any {
-  return readJsonFile(`${appRootPath}/${workspaceFileName()}`);
+export function readWorkspaceJson(
+  readFile: (p: string) => string = defaultFileRead
+): any {
+  return readJsonFile(workspaceFileName(readFile), readFile);
 }
 
 export function cliCommand() {
   return workspaceFileName() === 'angular.json' ? 'ng' : 'nx';
 }
 
-export function workspaceFileName() {
-  const packageJson = readPackageJson();
+export function workspaceFileName(
+  readFile: (p: string) => string = defaultFileRead
+) {
+  const packageJson = readPackageJson(readFile);
   if (
     packageJson.devDependencies['@angular/cli'] ||
     packageJson.dependencies['@angular/cli']
@@ -167,23 +170,29 @@ export function workspaceFileName() {
 }
 
 export function defaultFileRead(filePath: string) {
-  return readFileSync(`${appRootPath}/${filePath}`, 'UTF-8');
+  return readFileSync(join(appRootPath, filePath), 'UTF-8');
 }
 
-export function readPackageJson(): any {
-  return readJsonFile(`${appRootPath}/package.json`);
+export function readPackageJson(
+  readFile: (p: string) => string = defaultFileRead
+): any {
+  return readJsonFile(`package.json`, readFile);
 }
 
-export function readNxJson(): NxJson {
-  const config = readJsonFile<NxJson>(`${appRootPath}/nx.json`);
+export function readNxJson(
+  readFile: (p: string) => string = defaultFileRead
+): NxJson {
+  const config = readJsonFile<NxJson>(`nx.json`, readFile);
   if (!config.npmScope) {
     throw new Error(`nx.json must define the npmScope property.`);
   }
   return config;
 }
 
-export function readWorkspaceFiles(): FileData[] {
-  const workspaceJson = readWorkspaceJson();
+export function readWorkspaceFiles(
+  readFile: (p: string) => string = defaultFileRead
+): FileData[] {
+  const workspaceJson = readWorkspaceJson(readFile);
   const files = [];
 
   // Add known workspace files and directories

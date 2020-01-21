@@ -26,9 +26,8 @@ import * as inquirer from 'inquirer';
 import { platform } from 'os';
 import * as path from 'path';
 import * as yargsParser from 'yargs-parser';
-import { appRootPath } from '../utils/app-root';
 import { detectPackageManager } from '../utils/detect-package-manager';
-import { fileExists, readJsonFile } from '../utils/fileutils';
+import { appRootPath, fileExists, readJsonFile } from '../utils/fileutils';
 import { output } from '../utils/output';
 
 const rootDirectory = appRootPath;

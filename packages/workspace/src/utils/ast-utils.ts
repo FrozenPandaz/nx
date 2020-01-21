@@ -422,7 +422,7 @@ export function getProjectGraphFromHost(host: Tree): ProjectGraph {
   });
 
   return onlyWorkspaceProjects(
-    createProjectGraph(workspaceJson, nxJson, workspaceFiles, fileRead, false)
+    createProjectGraph(fileRead, workspaceFiles, false)
   );
 }
 

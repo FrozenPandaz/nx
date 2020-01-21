@@ -1,6 +1,5 @@
 import yargs = require('yargs');
 import { terminal } from '@angular-devkit/core';
-import { appRootPath } from '../utils/app-root';
 import { detectPackageManager } from '../utils/detect-package-manager';
 import {
   getPluginCapabilities,
@@ -9,6 +8,7 @@ import {
 } from '../utils/plugin-utils';
 import { approvedPlugins } from '../utils/plugins';
 import { output } from '../utils/output';
+import { appRootPath } from '../utils/fileutils';
 
 export interface YargsListArgs extends yargs.Arguments, ListArgs {}
 

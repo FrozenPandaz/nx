@@ -96,7 +96,7 @@ function normalizeOptions(
   });
 
   // Relative path for the dist directory
-  const tsconfig = readJsonFile(join(context.workspaceRoot, options.tsConfig));
+  const tsconfig = readJsonFile(options.tsConfig);
   const rootDir = tsconfig.compilerOptions.rootDir || '';
   const mainFileDir = dirname(options.main);
   const tsconfigDir = dirname(options.tsConfig);
@@ -191,9 +191,7 @@ function updatePackageJson(
   const mainFile = basename(options.main, '.ts');
   const typingsFile = `${mainFile}.d.ts`;
   const mainJsFile = `${mainFile}.js`;
-  const packageJson = readJsonFile(
-    join(context.workspaceRoot, options.packageJson)
-  );
+  const packageJson = readJsonFile(options.packageJson);
 
   packageJson.main = normalize(
     `./${options.relativeMainFileOutput}/${mainJsFile}`

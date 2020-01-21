@@ -1,12 +1,11 @@
 import { AffectedEventType, Task, TasksRunner } from './tasks-runner';
 import { join } from 'path';
-import { appRootPath } from '../utils/app-root';
 import { ReporterArgs } from './default-reporter';
 import * as yargs from 'yargs';
 import { ProjectGraph, ProjectGraphNode } from '../core/project-graph';
 import { Environment, NxJson } from '../core/shared-interfaces';
 import { NxArgs } from '@nrwl/workspace/src/command-line/utils';
-import { isRelativePath } from '../utils/fileutils';
+import { appRootPath, isRelativePath } from '../utils/fileutils';
 
 type RunArgs = yargs.Arguments & ReporterArgs;
 

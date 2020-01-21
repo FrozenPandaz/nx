@@ -1,33 +1,40 @@
 import { getImplicitlyTouchedProjectsByJsonChanges } from './implicit-json-changes';
-import { NxJson } from '../../shared-interfaces';
 import { WholeFileChange } from '../../file-utils';
 import { DiffType } from '../../../utils/json-diff';
+import { ProjectGraphNode } from '../../project-graph';
+import { vol, fs } from 'memfs';
 
 describe('getImplicitlyTouchedProjectsByJsonChanges', () => {
-  let workspaceJson;
-  let nxJson: NxJson<string[]>;
+  let nodes: Record<string, ProjectGraphNode<{}>>;
+  let readFile: (s: string) => string;
   beforeEach(() => {
-    workspaceJson = {
-      projects: {
-        proj1: {},
-        proj2: {}
-      }
-    };
-    nxJson = {
-      implicitDependencies: {
-        'package.json': {
-          dependencies: ['proj1'],
-          some: {
-            'deep-field': ['proj2']
-          }
+    readFile = path => fs.readFileSync(path).toString();
+    nodes = {
+      proj1: {
+        type: 'app',
+        name: 'proj1',
+        data: {
+          files: []
         }
-      },
-      npmScope: 'scope',
-      projects: {
-        proj1: {},
-        proj2: {}
       }
     };
+    vol.fromJSON({
+      'nx.json': JSON.stringify({
+        implicitDependencies: {
+          'package.json': {
+            dependencies: ['proj1'],
+            some: {
+              'deep-field': ['proj2']
+            }
+          }
+        },
+        npmScope: 'scope',
+        projects: {
+          proj1: {},
+          proj2: {}
+        }
+      })
+    });
   });
 
   it('should handle json changes', () => {
@@ -49,8 +56,8 @@ describe('getImplicitlyTouchedProjectsByJsonChanges', () => {
           ]
         }
       ],
-      workspaceJson,
-      nxJson
+      nodes,
+      readFile
     );
     expect(result).toEqual(['proj2']);
   });
@@ -65,8 +72,8 @@ describe('getImplicitlyTouchedProjectsByJsonChanges', () => {
           getChanges: () => [new WholeFileChange()]
         }
       ],
-      workspaceJson,
-      nxJson
+      nodes,
+      readFile
     );
     expect(result).toEqual(['proj1', 'proj2']);
   });

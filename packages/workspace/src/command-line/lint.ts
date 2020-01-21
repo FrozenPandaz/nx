@@ -4,9 +4,9 @@ import {
 } from '../core/project-graph';
 import { WorkspaceIntegrityChecks } from './workspace-integrity-checks';
 import * as path from 'path';
-import { appRootPath } from '../utils/app-root';
 import { allFilesInDir } from '../core/file-utils';
 import { output } from '../utils/output';
+import { appRootPath } from '../utils/fileutils';
 
 export function workspaceLint() {
   const graph = onlyWorkspaceProjects(createProjectGraph());

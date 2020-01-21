@@ -13,7 +13,7 @@ try {
 import { from } from 'rxjs';
 import { filter, map, mergeMap } from 'rxjs/operators';
 import * as path from 'path';
-import { appRootPath } from '../app-root';
+import { appRootPath } from '../fileutils';
 
 export function formatFiles(
   options: { skipFormat: boolean } = { skipFormat: false }

@@ -1,14 +1,11 @@
 import { extname } from 'path';
 import { jsonDiff } from '../../utils/json-diff';
-import { vol } from 'memfs';
+import { vol, fs } from 'memfs';
 import { stripIndents } from '@angular-devkit/core/src/utils/literals';
 import { createProjectGraph } from '../project-graph';
 import { filterAffected } from './affected-project-graph';
 import { FileData, WholeFileChange } from '../file-utils';
 import { NxJson } from '../shared-interfaces';
-
-jest.mock('fs', () => require('memfs').fs);
-jest.mock('../../utils/app-root', () => ({ appRootPath: '/root' }));
 
 describe('project graph', () => {
   let packageJson: any;
@@ -17,6 +14,7 @@ describe('project graph', () => {
   let filesJson: any;
   let filesAtMasterJson: any;
   let files: FileData[];
+  let readFile: (path: string) => string;
   let readFileAtRevision: (path: string, rev: string) => string;
 
   beforeEach(() => {
@@ -83,30 +81,31 @@ describe('project graph', () => {
       }
     };
     filesJson = {
-      './apps/api/src/index.ts': stripIndents`
+      'apps/api/src/index.ts': stripIndents`
         console.log('starting server');
       `,
-      './apps/demo/src/index.ts': stripIndents`
+      'apps/demo/src/index.ts': stripIndents`
         import * as ui from '@nrwl/ui';
       `,
-      './apps/demo-e2e/src/integration/app.spec.ts': stripIndents`
+      'apps/demo-e2e/src/integration/app.spec.ts': stripIndents`
         describe('whatever', () => {});
       `,
-      './libs/ui/src/index.ts': stripIndents`
+      'libs/ui/src/index.ts': stripIndents`
         import * as util from '@nrwl/util';
       `,
-      './libs/util/src/index.ts': stripIndents`
+      'libs/util/src/index.ts': stripIndents`
         import * as happyNrwl from 'happy-nrwl';
       `,
-      './package.json': JSON.stringify(packageJson),
-      './nx.json': JSON.stringify(nxJson),
-      './workspace.json': JSON.stringify(workspaceJson)
+      'package.json': JSON.stringify(packageJson),
+      'nx.json': JSON.stringify(nxJson),
+      'workspace.json': JSON.stringify(workspaceJson)
     };
     files = Object.keys(filesJson).map(f => ({
       file: f,
       ext: extname(f),
       mtime: 1
     }));
+    readFile = p => fs.readFileSync(p).toString();
     readFileAtRevision = (p, r) => {
       const fromFs = filesJson[`./${p}`];
       if (!fromFs) {
@@ -119,25 +118,29 @@ describe('project graph', () => {
         return fromFs;
       }
     };
-    vol.fromJSON(filesJson, '/root');
+    vol.fromJSON(filesJson);
   });
 
   it('should create nodes and dependencies with workspace projects', () => {
-    const graph = createProjectGraph();
-    const affected = filterAffected(graph, [
-      {
-        file: 'something-for-api.txt',
-        ext: '.txt',
-        mtime: 1,
-        getChanges: () => [new WholeFileChange()]
-      },
-      {
-        file: 'libs/ui/src/index.ts',
-        ext: '.ts',
-        mtime: 1,
-        getChanges: () => [new WholeFileChange()]
-      }
-    ]);
+    const graph = createProjectGraph(readFile, files, false);
+    const affected = filterAffected(
+      graph,
+      [
+        {
+          file: 'something-for-api.txt',
+          ext: '.txt',
+          mtime: 1,
+          getChanges: () => [new WholeFileChange()]
+        },
+        {
+          file: 'libs/ui/src/index.ts',
+          ext: '.ts',
+          mtime: 1,
+          getChanges: () => [new WholeFileChange()]
+        }
+      ],
+      readFile
+    );
     expect(affected).toEqual({
       nodes: {
         api: {
@@ -186,7 +189,7 @@ describe('project graph', () => {
   });
 
   it('should create nodes and dependencies with npm packages', () => {
-    const graph = createProjectGraph();
+    const graph = createProjectGraph(readFile, files, false);
     const updatedPackageJson = {
       ...packageJson,
       dependencies: {
@@ -194,14 +197,18 @@ describe('project graph', () => {
       }
     };
 
-    const affected = filterAffected(graph, [
-      {
-        file: 'package.json',
-        ext: '.json',
-        mtime: 1,
-        getChanges: () => jsonDiff(packageJson, updatedPackageJson)
-      }
-    ]);
+    const affected = filterAffected(
+      graph,
+      [
+        {
+          file: 'package.json',
+          ext: '.json',
+          mtime: 1,
+          getChanges: () => jsonDiff(packageJson, updatedPackageJson)
+        }
+      ],
+      readFile
+    );
 
     expect(affected).toEqual({
       nodes: {
@@ -253,7 +260,7 @@ describe('project graph', () => {
   });
 
   it('should support implicit JSON file dependencies (some projects)', () => {
-    const graph = createProjectGraph();
+    const graph = createProjectGraph(readFile, files, false);
     const updatedPackageJson = {
       ...packageJson,
       scripts: {
@@ -261,20 +268,24 @@ describe('project graph', () => {
       }
     };
 
-    const affected = filterAffected(graph, [
-      {
-        file: 'package.json',
-        ext: '.json',
-        mtime: 1,
-        getChanges: () => jsonDiff(packageJson, updatedPackageJson)
-      }
-    ]);
+    const affected = filterAffected(
+      graph,
+      [
+        {
+          file: 'package.json',
+          ext: '.json',
+          mtime: 1,
+          getChanges: () => jsonDiff(packageJson, updatedPackageJson)
+        }
+      ],
+      readFile
+    );
 
     expect(Object.keys(affected.nodes)).toEqual(['demo', 'demo-e2e', 'api']);
   });
 
   it('should support implicit JSON file dependencies (all projects)', () => {
-    const graph = createProjectGraph();
+    const graph = createProjectGraph(readFile, files, false);
     const updatedPackageJson = {
       ...packageJson,
       devDependencies: {
@@ -282,14 +293,19 @@ describe('project graph', () => {
       }
     };
 
-    const affected = filterAffected(graph, [
-      {
-        file: 'package.json',
-        ext: '.json',
-        mtime: 1,
-        getChanges: () => jsonDiff(packageJson, updatedPackageJson)
-      }
-    ]);
+    const affected = filterAffected(
+      graph,
+      [
+        {
+          file: 'package.json',
+          ext: '.json',
+          mtime: 1,
+          getChanges: () => jsonDiff(packageJson, updatedPackageJson)
+        }
+      ],
+
+      readFile
+    );
 
     expect(Object.keys(affected.nodes)).toEqual([
       '@nrwl/workspace',

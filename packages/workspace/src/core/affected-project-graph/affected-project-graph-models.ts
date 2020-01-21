@@ -1,5 +1,6 @@
 import { NxJson } from '../shared-interfaces';
 import { Change, FileChange } from '../file-utils';
+import { ProjectGraphNode } from '@nrwl/workspace/src/core/project-graph';
 
 export interface AffectedProjectGraphContext {
   workspaceJson: any;
@@ -10,8 +11,7 @@ export interface AffectedProjectGraphContext {
 export interface TouchedProjectLocator<T extends Change = Change> {
   (
     fileChanges: FileChange<T>[],
-    workspaceJson?: any,
-    nxJson?: NxJson<string[]>,
-    packageJson?: any
+    projectNodes?: Record<string, ProjectGraphNode<{}>>,
+    readFile?: (s: string) => string
   ): string[];
 }

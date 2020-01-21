@@ -1,10 +1,15 @@
-import { isWholeFileChange, WholeFileChange } from '../../file-utils';
+import {
+  isWholeFileChange,
+  readPackageJson,
+  WholeFileChange
+} from '../../file-utils';
 import { isJsonChange, JsonChange } from '../../../utils/json-diff';
 import { TouchedProjectLocator } from '../affected-project-graph-models';
 
 export const getTouchedNpmPackages: TouchedProjectLocator<
   WholeFileChange | JsonChange
-> = (touchedFiles, workspaceJson, nxJson, packageJson): string[] => {
+> = (touchedFiles, nodes, readFile): string[] => {
+  const packageJson = readPackageJson(readFile);
   const packageJsonChange = touchedFiles.find(f => f.file === 'package.json');
   const touched = [];
   if (packageJsonChange) {

@@ -93,7 +93,7 @@ export function getProjectNodes(
   workspaceJson: any,
   nxJson: NxJson
 ): ProjectGraphNode[] {
-  const graph = createProjectGraph(workspaceJson, nxJson);
+  const graph = createProjectGraph();
   return Object.values(graph.nodes);
 }
 

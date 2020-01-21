@@ -6,7 +6,6 @@ import {
   ProjectGraph,
   ProjectGraphNode
 } from '../core/project-graph';
-import { appRootPath } from '../utils/app-root';
 import {
   DepConstraint,
   Deps,
@@ -28,6 +27,7 @@ import {
   readNxJson,
   readWorkspaceJson
 } from '@nrwl/workspace/src/core/file-utils';
+import { appRootPath } from '@nrwl/workspace/src/utils/fileutils';
 
 export class Rule extends Lint.Rules.AbstractRule {
   constructor(
@@ -41,13 +41,9 @@ export class Rule extends Lint.Rules.AbstractRule {
     if (!projectPath) {
       this.projectPath = normalize(appRootPath);
       if (!(global as any).projectGraph) {
-        const workspaceJson = readWorkspaceJson();
         const nxJson = readNxJson();
         (global as any).npmScope = nxJson.npmScope;
-        (global as any).projectGraph = createProjectGraph(
-          workspaceJson,
-          nxJson
-        );
+        (global as any).projectGraph = createProjectGraph();
       }
       this.npmScope = (global as any).npmScope;
       this.projectGraph = (global as any).projectGraph;

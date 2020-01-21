@@ -1,9 +1,9 @@
-import * as fs from 'fs';
+import { fs, vol } from 'memfs';
+
+jest.mock('fs', () => require('memfs').fs);
 
 import { WorkspaceResults } from './workspace-results';
 import { serializeJson } from '../utils/fileutils';
-import { stripIndents } from '@angular-devkit/core/src/utils/literals';
-import { output } from '../utils/output';
 
 describe('WorkspacesResults', () => {
   let results: WorkspaceResults;
@@ -71,18 +71,17 @@ describe('WorkspacesResults', () => {
     });
 
     it('should read existing results', () => {
-      spyOn(fs, 'readFileSync').and.returnValue(
-        serializeJson({
+      vol.fromJSON({
+        'dist/.nx-results': serializeJson({
           command: 'test',
           results: {
             proj: false
           }
         })
-      );
+      });
 
       results = new WorkspaceResults('test');
 
-      expect(fs.readFileSync).toHaveBeenCalledWith('dist/.nx-results', 'utf-8');
       expect(results.getResult('proj')).toBe(false);
     });
 

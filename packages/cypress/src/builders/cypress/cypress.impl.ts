@@ -202,11 +202,9 @@ function isLegacy(
   options: CypressBuilderOptions,
   context: BuilderContext
 ): boolean {
-  const tsconfigJson = readJsonFile(
-    join(context.workspaceRoot, options.tsConfig)
-  );
+  const tsconfigJson = readJsonFile(options.tsConfig);
   const cypressConfigPath = join(context.workspaceRoot, options.cypressConfig);
-  const cypressJson = readJsonFile(cypressConfigPath);
+  const cypressJson = readJsonFile(options.cypressConfig);
 
   if (!cypressJson.integrationFolder) {
     throw new Error(

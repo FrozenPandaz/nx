@@ -6,15 +6,13 @@ import { DependencyType } from './project-graph-models';
 import { FileData } from '../file-utils';
 import { NxJson } from '../shared-interfaces';
 
-jest.mock('fs', () => require('memfs').fs);
-jest.mock('../../utils/app-root', () => ({ appRootPath: '/root' }));
-
 describe('project graph', () => {
   let packageJson: any;
   let workspaceJson: any;
   let nxJson: NxJson;
   let filesJson: any;
   let files: FileData[];
+  let readFile: (p: string) => string;
 
   beforeEach(() => {
     packageJson = {
@@ -73,35 +71,37 @@ describe('project graph', () => {
       }
     };
     filesJson = {
-      './apps/api/src/index.ts': stripIndents`
+      'apps/api/src/index.ts': stripIndents`
         console.log('starting server');
       `,
-      './apps/demo/src/index.ts': stripIndents`
+      'apps/demo/src/index.ts': stripIndents`
         import * as ui from '@nrwl/ui';
       `,
-      './apps/demo-e2e/src/integration/app.spec.ts': stripIndents`
+      'apps/demo-e2e/src/integration/app.spec.ts': stripIndents`
         describe('whatever', () => {});
       `,
-      './libs/ui/src/index.ts': stripIndents`
+      'libs/ui/src/index.ts': stripIndents`
         import * as util from '@nrwl/shared/util';
       `,
-      './libs/shared/util/src/index.ts': stripIndents`
+      'libs/shared/util/src/index.ts': stripIndents`
         import * as happyNrwl from 'happy-nrwl/a/b/c';
       `,
-      './package.json': JSON.stringify(packageJson),
-      './nx.json': JSON.stringify(nxJson),
-      './workspace.json': JSON.stringify(workspaceJson)
+      'package.json': JSON.stringify(packageJson),
+      'nx.json': JSON.stringify(nxJson),
+      'workspace.json': JSON.stringify(workspaceJson)
     };
     files = Object.keys(filesJson).map(f => ({
       file: f,
       ext: extname(f),
       mtime: 1
     }));
-    vol.fromJSON(filesJson, '/root');
+    vol.fromJSON(filesJson);
+
+    readFile = p => fs.readFileSync(p).toString();
   });
 
   it('should create nodes and dependencies with workspace projects', () => {
-    const graph = createProjectGraph();
+    const graph = createProjectGraph(readFile, files, false);
 
     expect(graph.nodes).toMatchObject({
       api: { name: 'api', type: 'app' },
@@ -125,11 +125,11 @@ describe('project graph', () => {
 
   it('should handle circular dependencies', () => {
     fs.writeFileSync(
-      '/root/libs/shared/util/src/index.ts',
+      'libs/shared/util/src/index.ts',
       `import * as ui from '@nrwl/ui';`
     );
 
-    const graph = createProjectGraph();
+    const graph = createProjectGraph(readFile, files, false);
 
     expect(graph.dependencies['shared-util']).toEqual([
       {

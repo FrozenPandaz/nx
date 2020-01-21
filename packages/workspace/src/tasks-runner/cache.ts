@@ -1,4 +1,3 @@
-import { appRootPath } from '../utils/app-root';
 import { ProjectGraph } from '../core/project-graph';
 import { NxJson } from '../core/shared-interfaces';
 import { Task } from './tasks-runner';
@@ -8,6 +7,7 @@ import { Hasher } from './hasher';
 import * as fsExtra from 'fs-extra';
 import { DefaultTasksRunnerOptions } from './tasks-runner-v2';
 import { spawn } from 'child_process';
+import { appRootPath } from '@nrwl/workspace/src/utils/fileutils';
 
 export type CachedResult = { terminalOutput: string; outputsPath: string };
 export type TaskWithCachedResult = { task: Task; cachedResult: CachedResult };

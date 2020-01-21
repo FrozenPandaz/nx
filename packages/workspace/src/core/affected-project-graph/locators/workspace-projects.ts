@@ -1,24 +1,27 @@
 import { TouchedProjectLocator } from '../affected-project-graph-models';
+import { readNxJson } from '../../../core/file-utils';
+import { normalizeNxJson } from '../../normalize-nx-json';
 
 export const getTouchedProjects: TouchedProjectLocator = (
   touchedFiles,
-  workspaceJson
+  nodes
 ): string[] => {
   return touchedFiles
     .map(f => {
-      return Object.keys(workspaceJson.projects).find(projectName => {
-        const p = workspaceJson.projects[projectName];
-        return f.file.startsWith(p.root);
+      return Object.values(nodes).find(node => {
+        return f.file.startsWith(node.data.root);
       });
     })
-    .filter(Boolean);
+    .filter(Boolean)
+    .map(node => node.name);
 };
 
 export const getImplicitlyTouchedProjects: TouchedProjectLocator = (
   fileChanges,
-  workspaceJson,
-  nxJson
+  nodes,
+  readFile
 ): string[] => {
+  const nxJson = normalizeNxJson(readNxJson(readFile));
   if (!nxJson.implicitDependencies) {
     return [];
   }

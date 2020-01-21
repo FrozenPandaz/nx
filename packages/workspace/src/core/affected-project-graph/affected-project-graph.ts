@@ -1,11 +1,10 @@
 import { ProjectGraph, ProjectGraphBuilder, reverse } from '../project-graph';
 import {
+  defaultFileRead,
   FileChange,
   readNxJson,
-  readPackageJson,
   readWorkspaceJson
 } from '../file-utils';
-import { NxJson } from '../shared-interfaces';
 import {
   getImplicitlyTouchedProjects,
   getTouchedProjects
@@ -23,11 +22,8 @@ import { getTouchedProjectsInWorkspaceJson } from './locators/workspace-json-cha
 export function filterAffected(
   graph: ProjectGraph,
   touchedFiles: FileChange[],
-  workspaceJson: any = readWorkspaceJson(),
-  nxJson: NxJson = readNxJson(),
-  packageJson: any = readPackageJson()
+  readFile: (s: string) => string = defaultFileRead
 ): ProjectGraph {
-  const normalizedNxJson = normalizeNxJson(nxJson);
   // Additional affected logic should be in this array.
   const touchedProjectLocators: TouchedProjectLocator[] = [
     getTouchedProjects,
@@ -39,14 +35,13 @@ export function filterAffected(
   ];
   const touchedProjects = touchedProjectLocators.reduce(
     (acc, f) => {
-      return acc.concat(
-        f(touchedFiles, workspaceJson, normalizedNxJson, packageJson)
-      );
+      return acc.concat(f(touchedFiles, graph.nodes, readFile));
     },
     [] as string[]
   );
+  const normalizedNxJson = normalizeNxJson(readNxJson(readFile));
   return filterAffectedProjects(graph, {
-    workspaceJson,
+    workspaceJson: readWorkspaceJson(readFile),
     nxJson: normalizedNxJson,
     touchedProjects
   });

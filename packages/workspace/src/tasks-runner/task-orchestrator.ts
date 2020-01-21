@@ -8,7 +8,7 @@ import { fork, spawn } from 'child_process';
 import { DefaultTasksRunnerOptions } from './tasks-runner-v2';
 import { output } from '../utils/output';
 import * as path from 'path';
-import { appRootPath } from '../utils/app-root';
+import { appRootPath } from '@nrwl/workspace/src/utils/fileutils';
 
 export class TaskOrchestrator {
   workspaceRoot = appRootPath;

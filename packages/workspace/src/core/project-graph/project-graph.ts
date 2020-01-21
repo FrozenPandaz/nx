@@ -1,8 +1,8 @@
-import { mkdirSync, readFileSync } from 'fs';
+import { mkdirSync } from 'fs';
 import { ProjectGraph } from './project-graph-models';
 import { ProjectGraphBuilder } from './project-graph-builder';
-import { appRootPath } from '../../utils/app-root';
 import {
+  appRootPath,
   directoryExists,
   fileExists,
   readJsonFile,
@@ -32,12 +32,14 @@ import { assertWorkspaceValidity } from '../assert-workspace-validity';
 import { normalizeNxJson } from '../normalize-nx-json';
 
 export function createProjectGraph(
-  workspaceJson = readWorkspaceJson(),
-  nxJson = readNxJson(),
-  workspaceFiles = readWorkspaceFiles(),
   fileRead: (s: string) => string = defaultFileRead,
-  cache: false | { data: ProjectGraphCache; mtime: number } = readCache()
+  workspaceFiles = readWorkspaceFiles(fileRead),
+  cache: false | { data: ProjectGraphCache; mtime: number } = readCache(
+    fileRead
+  )
 ): ProjectGraph {
+  const workspaceJson = readWorkspaceJson(fileRead);
+  const nxJson = readNxJson(fileRead);
   assertWorkspaceValidity(workspaceJson, nxJson);
 
   const normalizedNxJson = normalizeNxJson(nxJson);
@@ -89,13 +91,15 @@ interface ProjectGraphCache {
 
 const nxDepsPath = `${appRootPath}/dist/nxdeps.json`;
 
-function readCache(): false | { data: ProjectGraphCache; mtime: number } {
+function readCache(
+  readFile: (p: string) => string = defaultFileRead
+): false | { data: ProjectGraphCache; mtime: number } {
   if (!directoryExists(`${appRootPath}/dist`)) {
     mkdirSync(`${appRootPath}/dist`);
   }
 
   const data = getValidCache(
-    fileExists(nxDepsPath) ? readJsonFile(nxDepsPath) : null
+    fileExists(nxDepsPath) ? readJsonFile('dist/nxdeps.json', readFile) : null
   );
 
   return data ? { data, mtime: mtime(nxDepsPath) } : false;

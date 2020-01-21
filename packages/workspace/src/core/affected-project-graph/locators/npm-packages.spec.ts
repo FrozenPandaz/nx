@@ -1,33 +1,40 @@
 import { getTouchedNpmPackages } from './npm-packages';
-import { NxJson } from '../../shared-interfaces';
 import { WholeFileChange } from '../..//file-utils';
 import { DiffType } from '../../../utils/json-diff';
+import { ProjectGraphNode } from '../..//project-graph';
+import { vol, fs } from 'memfs';
 
 describe('getTouchedNpmPackages', () => {
-  let workspaceJson;
-  let nxJson: NxJson<string[]>;
+  let nodes: Record<string, ProjectGraphNode>;
+  let readFile: (p: string) => string;
+  let packageJson: any;
   beforeEach(() => {
-    workspaceJson = {
-      projects: {
-        proj1: {},
-        proj2: {}
-      }
-    };
-    nxJson = {
-      implicitDependencies: {
-        'package.json': {
-          dependencies: ['proj1'],
-          some: {
-            'deep-field': ['proj2']
-          }
+    nodes = {
+      proj1: {
+        type: 'app',
+        name: 'proj1',
+        data: {
+          files: []
         }
       },
-      npmScope: 'scope',
-      projects: {
-        proj1: {},
-        proj2: {}
+      proj2: {
+        type: 'app',
+        name: 'proj2',
+        data: {
+          files: []
+        }
       }
     };
+    packageJson = {
+      dependencies: {
+        'happy-nrwl': '0.0.2',
+        'awesome-nrwl': '0.0.1'
+      }
+    };
+    vol.fromJSON({
+      'package.json': JSON.stringify(packageJson)
+    });
+    readFile = path => fs.readFileSync(path).toString();
   });
 
   it('should handle json changes', () => {
@@ -58,13 +65,8 @@ describe('getTouchedNpmPackages', () => {
           ]
         }
       ],
-      workspaceJson,
-      nxJson,
-      {
-        dependencies: {
-          'happy-nrwl': '0.0.2'
-        }
-      }
+      nodes,
+      readFile
     );
     expect(result).toEqual(['happy-nrwl']);
   });
@@ -79,14 +81,8 @@ describe('getTouchedNpmPackages', () => {
           getChanges: () => [new WholeFileChange()]
         }
       ],
-      workspaceJson,
-      nxJson,
-      {
-        dependencies: {
-          'happy-nrwl': '0.0.1',
-          'awesome-nrwl': '0.0.1'
-        }
-      }
+      nodes,
+      readFile
     );
     expect(result).toEqual(['happy-nrwl', 'awesome-nrwl']);
   });

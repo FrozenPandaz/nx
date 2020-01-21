@@ -2,7 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ensureDirSync } from 'fs-extra';
 import * as stripJsonComments from 'strip-json-comments';
-import { appRootPath } from './app-root';
+import { defaultFileRead } from '../core/file-utils';
+
 const ignore = require('ignore');
 
 export function writeToFile(filePath: string, str: string) {
@@ -35,8 +36,11 @@ export function serializeJson(json: any): string {
  * If you are looking to read a JSON file in a Tree, use ./ast-utils#readJsonInTree
  * @param path Path of the JSON file on the filesystem
  */
-export function readJsonFile<T = any>(path: string): T {
-  return JSON.parse(stripJsonComments(fs.readFileSync(path, 'utf-8')));
+export function readJsonFile<T = any>(
+  path: string,
+  readFile: (p: string) => string = defaultFileRead
+): T {
+  return JSON.parse(stripJsonComments(readFile(path)));
 }
 
 export function writeJsonFile(path: string, json: any) {
@@ -110,4 +114,19 @@ export function renameSync(
 
 export function isRelativePath(path: string): boolean {
   return path.startsWith('./') || path.startsWith('../');
+}
+
+// TODO: vsavkin normalize the path
+export const appRootPath = pathInner(__dirname);
+
+function pathInner(dir: string): string {
+  if (path.dirname(dir) === dir) return process.cwd();
+  if (
+    fileExists(path.join(dir, 'workspace.json')) ||
+    fileExists(path.join(dir, 'angular.json'))
+  ) {
+    return dir;
+  } else {
+    return pathInner(path.dirname(dir));
+  }
 }

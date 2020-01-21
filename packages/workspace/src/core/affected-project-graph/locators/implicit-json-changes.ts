@@ -1,4 +1,4 @@
-import { WholeFileChange } from '../../file-utils';
+import { readNxJson, WholeFileChange } from '../../file-utils';
 import {
   isJsonChange,
   JsonChange,
@@ -6,11 +6,12 @@ import {
 } from '../../../utils/json-diff';
 import { TouchedProjectLocator } from '../affected-project-graph-models';
 import { ImplicitDependencyEntry } from '../../shared-interfaces';
+import { normalizeNxJson } from '../../../core/normalize-nx-json';
 
 export const getImplicitlyTouchedProjectsByJsonChanges: TouchedProjectLocator<
   WholeFileChange | JsonChange
-> = (touchedFiles, workspaceJson, nxJson): string[] => {
-  const { implicitDependencies } = nxJson;
+> = (touchedFiles, nodes, readFile): string[] => {
+  const { implicitDependencies } = normalizeNxJson(readNxJson(readFile));
 
   if (!implicitDependencies) {
     return [];

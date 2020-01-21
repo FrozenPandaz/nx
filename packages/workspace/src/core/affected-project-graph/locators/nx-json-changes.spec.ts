@@ -1,8 +1,29 @@
 import { getTouchedProjectsInNxJson } from './nx-json-changes';
 import { WholeFileChange } from '../../file-utils';
 import { DiffType } from '../../../utils/json-diff';
+import { ProjectGraphNode } from '@nrwl/workspace/src/core/project-graph';
 
 describe('getTouchedProjectsInNxJson', () => {
+  let nodes: Record<string, ProjectGraphNode>;
+  beforeEach(() => {
+    nodes = {
+      proj1: {
+        type: 'app',
+        name: 'proj1',
+        data: {
+          files: []
+        }
+      },
+      proj2: {
+        type: 'app',
+        name: 'proj2',
+        data: {
+          files: []
+        }
+      }
+    };
+  });
+
   it('should not return changes when nx.json is not touched', () => {
     const result = getTouchedProjectsInNxJson(
       [
@@ -13,15 +34,7 @@ describe('getTouchedProjectsInNxJson', () => {
           getChanges: () => [new WholeFileChange()]
         }
       ],
-      {},
-      {
-        npmScope: 'proj',
-        projects: {
-          proj1: {
-            tags: []
-          }
-        }
-      }
+      nodes
     );
     expect(result).toEqual([]);
   });
@@ -36,18 +49,7 @@ describe('getTouchedProjectsInNxJson', () => {
           getChanges: () => [new WholeFileChange()]
         }
       ],
-      {},
-      {
-        npmScope: 'proj',
-        projects: {
-          proj1: {
-            tags: []
-          },
-          proj2: {
-            tags: []
-          }
-        }
-      }
+      nodes
     );
     expect(result).toEqual(['proj1', 'proj2']);
   });
@@ -71,18 +73,7 @@ describe('getTouchedProjectsInNxJson', () => {
           ]
         }
       ],
-      {},
-      {
-        npmScope: 'proj',
-        projects: {
-          proj1: {
-            tags: []
-          },
-          proj2: {
-            tags: []
-          }
-        }
-      }
+      nodes
     );
     expect(result).toEqual(['proj1', 'proj2']);
   });
@@ -106,23 +97,12 @@ describe('getTouchedProjectsInNxJson', () => {
           ]
         }
       ],
-      {},
-      {
-        npmScope: 'proj',
-        projects: {
-          proj1: {
-            tags: []
-          },
-          proj2: {
-            tags: []
-          }
-        }
-      }
+      nodes
     );
     expect(result).toEqual(['proj1']);
   });
 
-  it('should not return projects removed in nx.json', () => {
+  it('should return all projects when a project is removed from nx.json', () => {
     const result = getTouchedProjectsInNxJson(
       [
         {
@@ -141,18 +121,7 @@ describe('getTouchedProjectsInNxJson', () => {
           ]
         }
       ],
-      {},
-      {
-        npmScope: 'proj',
-        projects: {
-          proj1: {
-            tags: []
-          },
-          proj2: {
-            tags: []
-          }
-        }
-      }
+      nodes
     );
     expect(result).toEqual(['proj1', 'proj2']);
   });
@@ -176,18 +145,7 @@ describe('getTouchedProjectsInNxJson', () => {
           ]
         }
       ],
-      {},
-      {
-        npmScope: 'proj',
-        projects: {
-          proj1: {
-            tags: []
-          },
-          proj2: {
-            tags: []
-          }
-        }
-      }
+      nodes
     );
     expect(result).toEqual(['proj1']);
   });

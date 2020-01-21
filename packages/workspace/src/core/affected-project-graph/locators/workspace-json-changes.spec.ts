@@ -1,8 +1,29 @@
 import { getTouchedProjectsInWorkspaceJson } from './workspace-json-changes';
 import { WholeFileChange } from '../../file-utils';
 import { DiffType } from '../../../utils/json-diff';
+import { ProjectGraphNode } from '@nrwl/workspace/src/core/project-graph';
 
 describe('getTouchedProjectsInWorkspaceJson', () => {
+  let nodes: Record<string, ProjectGraphNode>;
+  beforeEach(() => {
+    nodes = {
+      proj1: {
+        type: 'app',
+        name: 'proj1',
+        data: {
+          files: []
+        }
+      },
+      proj2: {
+        type: 'app',
+        name: 'proj2',
+        data: {
+          files: []
+        }
+      }
+    };
+  });
+
   it('should not return changes when angular.json is not touched', () => {
     const result = getTouchedProjectsInWorkspaceJson(
       [
@@ -13,15 +34,7 @@ describe('getTouchedProjectsInWorkspaceJson', () => {
           getChanges: () => [new WholeFileChange()]
         }
       ],
-      {},
-      {
-        npmScope: 'proj',
-        projects: {
-          proj1: {
-            tags: []
-          }
-        }
-      }
+      nodes
     );
     expect(result).toEqual([]);
   });
@@ -36,17 +49,7 @@ describe('getTouchedProjectsInWorkspaceJson', () => {
           getChanges: () => [new WholeFileChange()]
         }
       ],
-      {
-        npmScope: 'proj',
-        projects: {
-          proj1: {
-            tags: []
-          },
-          proj2: {
-            tags: []
-          }
-        }
-      }
+      nodes
     );
     expect(result).toEqual(['proj1', 'proj2']);
   });
@@ -70,17 +73,7 @@ describe('getTouchedProjectsInWorkspaceJson', () => {
           ]
         }
       ],
-      {
-        newProjectRoot: 'projects',
-        projects: {
-          proj1: {
-            tags: []
-          },
-          proj2: {
-            tags: []
-          }
-        }
-      }
+      nodes
     );
     expect(result).toEqual(['proj1', 'proj2']);
   });
@@ -104,13 +97,7 @@ describe('getTouchedProjectsInWorkspaceJson', () => {
           ]
         }
       ],
-      {
-        projects: {
-          proj1: {
-            root: 'proj1'
-          }
-        }
-      }
+      nodes
     );
     expect(result).toEqual(['proj1']);
   });
@@ -134,16 +121,7 @@ describe('getTouchedProjectsInWorkspaceJson', () => {
           ]
         }
       ],
-      {
-        projects: {
-          proj1: {
-            root: 'proj1'
-          },
-          proj2: {
-            root: 'proj2'
-          }
-        }
-      }
+      nodes
     );
     expect(result).toEqual(['proj1', 'proj2']);
   });
@@ -167,16 +145,7 @@ describe('getTouchedProjectsInWorkspaceJson', () => {
           ]
         }
       ],
-      {
-        projects: {
-          proj1: {
-            root: 'proj1'
-          },
-          proj2: {
-            root: 'proj2'
-          }
-        }
-      }
+      nodes
     );
     expect(result).toEqual(['proj1']);
   });

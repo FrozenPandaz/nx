@@ -1,4 +1,3 @@
-import { appRootPath } from '@nrwl/workspace/src/utils/app-root';
 import {
   DepConstraint,
   findConstraintsFor,
@@ -22,9 +21,9 @@ import {
 } from '@nrwl/workspace/src/core/project-graph';
 import {
   normalizedProjectRoot,
-  readNxJson,
-  readWorkspaceJson
+  readNxJson
 } from '@nrwl/workspace/src/core/file-utils';
+import { appRootPath } from '@nrwl/workspace/src/utils/fileutils';
 
 type Options = [
   {
@@ -93,10 +92,9 @@ export default createESLintRule<Options, MessageIds>({
      */
     const projectPath = normalize((global as any).projectPath || appRootPath);
     if (!(global as any).projectGraph) {
-      const workspaceJson = readWorkspaceJson();
       const nxJson = readNxJson();
       (global as any).npmScope = nxJson.npmScope;
-      (global as any).projectGraph = createProjectGraph(workspaceJson, nxJson);
+      (global as any).projectGraph = createProjectGraph();
     }
     const npmScope = (global as any).npmScope;
     const projectGraph = (global as any).projectGraph as ProjectGraph;
