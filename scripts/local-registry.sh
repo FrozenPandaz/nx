@@ -20,6 +20,12 @@ if [[ $ENABLE == "disable" ]]; then
 	echo "  > YARN: $CURRENT_YARN_REIGSTRY"
 fi
 
+if [[ $ENABLE == "clear" ]]; then
+	echo "Clearing locally published versions"
+
+	rm -rf ~/.local/share/verdaccio/storage/
+fi
+
 if [[ $ENABLE == "start" ]]; then
   echo "Starting Local Registry"
   npx verdaccio
