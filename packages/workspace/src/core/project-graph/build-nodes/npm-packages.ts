@@ -1,5 +1,8 @@
 import * as stripJsonComments from 'strip-json-comments';
 import { ProjectGraphContext, AddProjectNode } from '../project-graph-models';
+import * as resolve from 'resolve';
+import { appRootPath } from '@nrwl/workspace/src/utils/app-root';
+import { mtime } from '@nrwl/workspace/src/core/file-utils';
 
 export function buildNpmPackageNodes(
   ctx: ProjectGraphContext,
@@ -12,12 +15,22 @@ export function buildNpmPackageNodes(
     ...packageJson.devDependencies,
   };
   Object.keys(deps).forEach((d) => {
+    const packageJsonPath = resolve.sync(`${d}/package.json`, {
+      basedir: appRootPath,
+    });
+    const packageJsonMTime = mtime(packageJsonPath);
     addNode({
       type: 'npm',
       name: d,
       data: {
         version: deps[d],
-        files: [],
+        files: [
+          {
+            file: packageJsonPath,
+            mtime: packageJsonMTime,
+            ext: '.json',
+          },
+        ],
       },
     });
   });
