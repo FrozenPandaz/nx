@@ -1,3 +1,10 @@
+
+---
+name: Feature Request
+about: Request behavior that does not currently exist
+labels: type:feature
+---
+
 ## Description
 
 Description the change you would like to have.
