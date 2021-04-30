@@ -117,7 +117,9 @@
     "dep-graph-dep-graph": {
       "tags": ["core"]
     },
+    "docs": {},
     "nx-dev": {
+      "implicitDependencies": ["docs"],
       "tags": ["scope:nx-dev", "type:app"]
     },
     "nx-dev-e2e": {

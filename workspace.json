@@ -2201,6 +2201,11 @@
         }
       }
     },
+    "docs": {
+      "root": "docs",
+      "sourceRoot": "docs",
+      "projectType": "library"
+    },
     "nx-dev": {
       "root": "nx-dev/nx-dev",
       "sourceRoot": "nx-dev/nx-dev",
