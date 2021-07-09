@@ -81,8 +81,6 @@ describe('updateJestConfig', () => {
     };`;
     const jestConfigPath = '/libs/other/test/dir/my-destination/jest.config.js';
 
-    const rootJestConfigPath = '/jest.config.js';
-
     await libraryGenerator(tree, {
       name: 'some/test/dir/my-source',
       standaloneConfig: false,
@@ -103,17 +101,47 @@ describe('updateJestConfig', () => {
     updateJestConfig(tree, schema, projectConfig);
 
     const jestConfigAfter = tree.read(jestConfigPath, 'utf-8');
-    const rootJestConfigAfter = tree.read(rootJestConfigPath, 'utf-8');
     expect(jestConfigAfter).toContain(`name: 'other-test-dir-my-destination'`);
     expect(jestConfigAfter).toContain(
       `coverageDirectory: '../../coverage/libs/other/test/dir/my-destination'`
     );
+  });
 
-    expect(rootJestConfigAfter).not.toContain(
-      '<rootDir>/libs/some/test/dir/my-source'
+  it('should update the project path in the root jest config if it is present', async () => {
+    await libraryGenerator(tree, {
+      name: 'some/test/dir/my-source',
+      standaloneConfig: false,
+    });
+
+    tree.write(
+      '/jest.config.js',
+      `module.exports = { projects: [ '<rootDir>/libs/some/test/dir/my-source' ] };`
     );
-    expect(rootJestConfigAfter).toContain(
-      '<rootDir>/libs/other/test/dir/my-destination'
+
+    const projectConfig = readProjectConfiguration(
+      tree,
+      'some-test-dir-my-source'
+    );
+
+    const schema: Schema = {
+      projectName: 'some-test-dir-my-source',
+      destination: 'other/test/dir/my-destination',
+      importPath: undefined,
+      updateImportPath: true,
+    };
+
+    const jestConfig = `module.exports = {
+      name: 'some-test-dir-my-source',
+      preset: '../../jest.config.js',
+      coverageDirectory: '../../coverage/libs/some/test/dir/my-source',
+    };`;
+    const jestConfigPath = '/libs/other/test/dir/my-destination/jest.config.js';
+    tree.write(jestConfigPath, jestConfig);
+
+    updateJestConfig(tree, schema, projectConfig);
+
+    expect(tree.read('/jest.config.js', 'utf-8')).toMatchInlineSnapshot(
+      `"module.exports = { projects: [ '<rootDir>/libs/other/test/dir/my-destination' ] };"`
     );
   });
 });
