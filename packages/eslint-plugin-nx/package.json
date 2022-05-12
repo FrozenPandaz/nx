@@ -1,6 +1,6 @@
 {
   "name": "@nrwl/eslint-plugin-nx",
-  "version": "0.0.1",
+  "version": "14.1.18",
   "description": "ESLint Plugin for Nx",
   "repository": {
     "type": "git",

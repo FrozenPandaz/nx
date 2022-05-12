@@ -1,6 +1,6 @@
 {
   "name": "@nrwl/cli",
-  "version": "0.0.1",
+  "version": "14.1.18",
   "description": "Smart, Fast and Extensible Build System",
   "repository": {
     "type": "git",

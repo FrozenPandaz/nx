@@ -1,6 +1,6 @@
 {
   "name": "add-nx-to-monorepo",
-  "version": "0.0.1",
+  "version": "14.1.18",
   "description": "Make any monorepo faster by adding Nx to it",
   "repository": {
     "type": "git",
@@ -27,12 +27,12 @@
   },
   "homepage": "https://nx.dev",
   "dependencies": {
-    "strip-json-comments": "^3.1.1",
-    "ignore": "5.0.4",
-    "@nrwl/workspace": "file:../workspace",
     "@nrwl/devkit": "file:../devkit",
-    "nx": "file:../nx",
+    "@nrwl/workspace": "file:../workspace",
     "enquirer": "~2.3.6",
+    "ignore": "5.0.4",
+    "nx": "file:../nx",
+    "strip-json-comments": "^3.1.1",
     "yargs-parser": "21.0.1"
   }
 }

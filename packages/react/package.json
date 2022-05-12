@@ -1,6 +1,6 @@
 {
   "name": "@nrwl/react",
-  "version": "0.0.1",
+  "version": "14.1.18",
   "description": "The React plugin contains executors and generators for managing React applications and libraries within an Nx workspace. It provides:\n\n\n- Integration with libraries such as Jest, Cypress, and Storybook.\n\n- Generators for applications, libraries, components, hooks, and more.\n\n- Library build support for publishing packages to npm or other registries.\n\n- Utilities for automatic workspace refactoring.",
   "repository": {
     "type": "git",
@@ -41,6 +41,7 @@
     "@nrwl/web": "file:../web",
     "@nrwl/workspace": "file:../workspace",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.1",
+    "@storybook/node-logger": "6.1.20",
     "@svgr/webpack": "^6.1.2",
     "chalk": "4.1.0",
     "eslint-plugin-import": "^2.25.2",
@@ -48,10 +49,9 @@
     "eslint-plugin-react": "7.28.0",
     "eslint-plugin-react-hooks": "^4.3.0",
     "react-refresh": "^0.10.0",
+    "semver": "7.3.4",
     "url-loader": "^4.1.1",
     "webpack": "^5.58.1",
-    "webpack-merge": "^5.8.0",
-    "@storybook/node-logger": "6.1.20",
-    "semver": "7.3.4"
+    "webpack-merge": "^5.8.0"
   }
 }

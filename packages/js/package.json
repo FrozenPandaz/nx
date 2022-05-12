@@ -1,6 +1,6 @@
 {
   "name": "@nrwl/js",
-  "version": "0.0.1",
+  "version": "14.1.18",
   "description": "The Nx plugin that provides the best experience for developing JavaScript and TypeScript projects.",
   "repository": {
     "type": "git",
@@ -31,10 +31,10 @@
   "executors": "./executors.json",
   "builders": "./executors.json",
   "dependencies": {
-    "@nrwl/workspace": "file:../workspace",
     "@nrwl/devkit": "file:../devkit",
     "@nrwl/jest": "file:../jest",
     "@nrwl/linter": "file:../linter",
+    "@nrwl/workspace": "file:../workspace",
     "@parcel/watcher": "2.0.4",
     "chalk": "4.1.0",
     "fast-glob": "3.2.7",
