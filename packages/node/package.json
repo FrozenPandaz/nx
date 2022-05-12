@@ -30,11 +30,11 @@
     "migrations": "./migrations.json"
   },
   "dependencies": {
-    "@nrwl/workspace": "*",
-    "@nrwl/devkit": "*",
-    "@nrwl/jest": "*",
-    "@nrwl/js": "*",
-    "@nrwl/linter": "*",
+    "@nrwl/workspace": "file:../workspace",
+    "@nrwl/devkit": "file:../devkit",
+    "@nrwl/jest": "file:../jest",
+    "@nrwl/js": "file:../js",
+    "@nrwl/linter": "file:../linter",
     "chalk": "4.1.0",
     "copy-webpack-plugin": "^9.0.1",
     "enhanced-resolve": "^5.8.3",

@@ -33,9 +33,9 @@
     "migrations": "./migrations.json"
   },
   "dependencies": {
-    "@nrwl/devkit": "*",
-    "@nrwl/linter": "*",
-    "@nrwl/workspace": "*",
+    "@nrwl/devkit": "file:../devkit",
+    "@nrwl/linter": "file:../linter",
+    "@nrwl/workspace": "file:../workspace",
     "@cypress/webpack-preprocessor": "^5.9.1",
     "chalk": "4.1.0",
     "enhanced-resolve": "^5.8.3",

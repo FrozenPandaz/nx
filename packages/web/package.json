@@ -29,12 +29,12 @@
     "migrations": "./migrations.json"
   },
   "dependencies": {
-    "@nrwl/cypress": "*",
-    "@nrwl/devkit": "*",
-    "@nrwl/jest": "*",
-    "@nrwl/js": "*",
-    "@nrwl/linter": "*",
-    "@nrwl/workspace": "*",
+    "@nrwl/cypress": "file:../cypress",
+    "@nrwl/devkit": "file:../devkit",
+    "@nrwl/jest": "file:../jest",
+    "@nrwl/js": "file:../js",
+    "@nrwl/linter": "file:../linter",
+    "@nrwl/workspace": "file:../workspace",
     "@babel/core": "^7.15.0",
     "@babel/preset-env": "^7.15.0",
     "@babel/plugin-proposal-class-properties": "^7.14.5",

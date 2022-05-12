@@ -28,8 +28,8 @@
   },
   "homepage": "https://nx.dev",
   "dependencies": {
-    "nx": "*",
-    "@nrwl/devkit": "*",
+    "nx": "file:../nx",
+    "@nrwl/devkit": "file:../devkit",
     "enquirer": "~2.3.6",
     "fs-extra": "^10.1.0",
     "tmp": "~0.2.1",

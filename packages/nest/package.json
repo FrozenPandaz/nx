@@ -29,11 +29,11 @@
     "migrations": "./migrations.json"
   },
   "dependencies": {
-    "@nrwl/devkit": "*",
-    "@nrwl/linter": "*",
-    "@nrwl/node": "*",
-    "@nrwl/js": "*",
-    "@nrwl/jest": "*",
+    "@nrwl/devkit": "file:../devkit",
+    "@nrwl/linter": "file:../linter",
+    "@nrwl/node": "file:../node",
+    "@nrwl/js": "file:../js",
+    "@nrwl/jest": "file:../jest",
     "@nestjs/schematics": "^8.0.0"
   }
 }

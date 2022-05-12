@@ -22,9 +22,9 @@
   "homepage": "https://nx.dev",
   "dependencies": {
     "tslib": "^2.3.0",
-    "@nrwl/workspace": "*",
-    "@nrwl/devkit": "*",
-    "nx": "*",
+    "@nrwl/workspace": "file:../workspace",
+    "@nrwl/devkit": "file:../devkit",
+    "nx": "file:../nx",
     "fs-extra": "^10.1.0",
     "yargs-parser": "21.0.1"
   }
