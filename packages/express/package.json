@@ -1,6 +1,6 @@
 {
   "name": "@nrwl/express",
-  "version": "0.0.1",
+  "version": "14.1.18",
   "description": "The Nx Plugin for Express that contains executors and generators for allowing your workspace to create powerful Express Node applications and APIs.",
   "repository": {
     "type": "git",
@@ -29,9 +29,9 @@
     "migrations": "./migrations.json"
   },
   "dependencies": {
-    "@nrwl/devkit": "*",
-    "@nrwl/node": "*",
-    "@nrwl/workspace": "*"
+    "@nrwl/devkit": "file:../devkit",
+    "@nrwl/node": "file:../node",
+    "@nrwl/workspace": "file:../workspace"
   },
   "peerDependencies": {
     "express": "4.17.2"

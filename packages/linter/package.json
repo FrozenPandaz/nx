@@ -1,6 +1,6 @@
 {
   "name": "@nrwl/linter",
-  "version": "0.0.1",
+  "version": "14.1.18",
   "description": "The Linter plugin contains executors, generator, plugin and utilities used for linting JavaScript/TypeScript projects within an Nx workspace.",
   "repository": {
     "type": "git",
@@ -33,9 +33,9 @@
     "eslint": "^8.0.0"
   },
   "dependencies": {
+    "@nrwl/devkit": "file:../devkit",
+    "@nrwl/jest": "file:../jest",
     "@phenomnomnominal/tsquery": "4.1.1",
-    "@nrwl/devkit": "*",
-    "@nrwl/jest": "*",
     "tmp": "~0.2.1",
     "tslib": "^2.3.0"
   },

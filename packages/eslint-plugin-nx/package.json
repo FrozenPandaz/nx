@@ -1,6 +1,6 @@
 {
   "name": "@nrwl/eslint-plugin-nx",
-  "version": "0.0.1",
+  "version": "14.1.18",
   "description": "ESLint Plugin for Nx",
   "repository": {
     "type": "git",
@@ -32,8 +32,8 @@
     }
   },
   "dependencies": {
-    "@nrwl/devkit": "*",
-    "@nrwl/workspace": "*",
+    "@nrwl/devkit": "file:../devkit",
+    "@nrwl/workspace": "file:../workspace",
     "@typescript-eslint/experimental-utils": "~5.18.0",
     "chalk": "4.1.0",
     "confusing-browser-globals": "^1.0.9"

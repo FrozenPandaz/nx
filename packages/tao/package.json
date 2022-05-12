@@ -1,6 +1,6 @@
 {
   "name": "@nrwl/tao",
-  "version": "0.0.1",
+  "version": "14.1.18",
   "description": "CLI for generating code and running commands",
   "repository": {
     "type": "git",
@@ -30,6 +30,6 @@
   },
   "homepage": "https://nx.dev",
   "dependencies": {
-    "nx": "*"
+    "nx": "file:../nx"
   }
 }
