@@ -1,6 +1,6 @@
 {
   "name": "make-angular-cli-faster",
-  "version": "0.0.1",
+  "version": "14.1.18",
   "description": "Make Angular CLI faster by enabling distributed computation caching",
   "repository": {
     "type": "git",
@@ -27,10 +27,10 @@
   },
   "homepage": "https://nx.dev",
   "dependencies": {
-    "@nrwl/devkit": "*",
-    "@nrwl/workspace": "*",
+    "@nrwl/devkit": "file:../devkit",
+    "@nrwl/workspace": "file:../workspace",
     "enquirer": "^2.3.6",
-    "nx": "*",
+    "nx": "file:../nx",
     "semver": "7.3.4",
     "tmp": "~0.2.1",
     "yargs": "^17.4.0",

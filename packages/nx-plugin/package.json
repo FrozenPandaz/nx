@@ -1,6 +1,6 @@
 {
   "name": "@nrwl/nx-plugin",
-  "version": "0.0.1",
+  "version": "14.1.18",
   "description": "Plugin for creating plugins for Nx :)",
   "repository": {
     "type": "git",
@@ -27,10 +27,10 @@
     "migrations": "./migrations.json"
   },
   "dependencies": {
-    "@nrwl/devkit": "*",
-    "@nrwl/jest": "*",
-    "@nrwl/linter": "*",
-    "@nrwl/js": "*",
+    "@nrwl/devkit": "file:../devkit",
+    "@nrwl/jest": "file:../jest",
+    "@nrwl/js": "file:../js",
+    "@nrwl/linter": "file:../linter",
     "fs-extra": "^10.1.0",
     "rxjs": "^6.5.4",
     "tslib": "^2.3.0"
