@@ -2,6 +2,6 @@
   "packages": [
     "build/packages/*"
   ],
-  "version": "14.1.22",
+  "version": "14.1.23",
   "granularPathspec": false
 }
