@@ -3,6 +3,30 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [14.1.21](https://github.com/FrozenPandaz/nx/compare/14.1.18...14.1.21) (2022-05-12)
+
+**Note:** Version bump only for package @nrwl/nx-source
+
+
+
+
+
+## [14.1.20](https://github.com/FrozenPandaz/nx/compare/14.1.18...14.1.20) (2022-05-12)
+
+**Note:** Version bump only for package @nrwl/nx-source
+
+
+
+
+
+## [14.1.19](https://github.com/FrozenPandaz/nx/compare/14.1.18...14.1.19) (2022-05-12)
+
+**Note:** Version bump only for package @nrwl/nx-source
+
+
+
+
+
 ## [14.1.18](https://github.com/FrozenPandaz/nx/compare/14.1.5...14.1.18) (2022-05-12)
 
 
