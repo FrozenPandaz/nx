@@ -3,7 +3,7 @@ import * as yargsParser from 'yargs-parser';
 
 import { execSync } from 'child_process';
 
-import { readFileSync, existsSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 
 import * as path from 'path';
 
@@ -19,14 +19,18 @@ const parsedArgs: {
   help: boolean;
   force: boolean;
   clearLocalRegistry: boolean;
+  tag: string;
   version?: string;
 } = yargsParser(process.argv, {
-  boolean: ['dry-run', 'local', 'force', 'clearLocalRegistry'],
+  boolean: ['dry-run', 'local', 'force', 'clearLocalRegistry', 'tag'],
   string: ['version'],
   alias: {
     d: 'dry-run',
     h: 'help',
     l: 'local',
+  },
+  default: {
+    tag: 'beta',
   },
 }) as any;
 
@@ -125,6 +129,7 @@ if (!parsedArgs.local) {
 
     const publishOptions = {
       gitReset: false,
+      distTag: parsedArgs.tag,
     };
 
     if (!parsedArgs.dryRun) {
