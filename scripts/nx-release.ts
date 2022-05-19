@@ -156,6 +156,18 @@ function parseArgs() {
       description: 'Log Level',
       choices: ['error', 'info', 'debug'],
     })
+    .example(
+      '$0',
+      `By default, this will publish a minor version bump locally as latest. Great for local development. Most developers can run just this.`
+    )
+    .example(
+      'GH_TOKEN=<gh_token> $0 --local false',
+      `This will publish a new beta version to npm. The version is inferred by the changes. Note: `
+    )
+    .example(
+      'GH_TOKEN=<gh_token> $0 --local false --tag latest',
+      `This will publish a new latest version to NPM. The version is inferred by the changes.`
+    )
     .group(
       ['local', 'clearLocalRegistry'],
       'Local Publishing Options for most developers'
