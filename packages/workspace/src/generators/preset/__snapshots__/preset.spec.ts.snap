@@ -37,3 +37,30 @@ Array [
   "nx-welcome.component.ts",
 ]
 `;
+
+exports[`preset should create files (preset = ts) 1`] = `
+"{
+  \\"npmScope\\": \\"proj\\",
+  \\"affected\\": {
+    \\"defaultBase\\": \\"main\\"
+  },
+  \\"tasksRunnerOptions\\": {
+    \\"default\\": {
+      \\"runner\\": \\"nx/tasks-runners/default\\",
+      \\"options\\": {
+        \\"cacheableOperations\\": [
+          \\"build\\",
+          \\"lint\\",
+          \\"test\\",
+          \\"e2e\\"
+        ]
+      }
+    }
+  },
+  \\"workspaceLayout\\": {
+    \\"libsDir\\": \\"packages\\",
+    \\"appsDir\\": \\"packages\\"
+  }
+}
+"
+`;

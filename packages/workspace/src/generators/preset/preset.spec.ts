@@ -41,6 +41,18 @@ describe('preset', () => {
     overrideCollectionResolutionForTesting(null);
   });
 
+  it(`should create files (preset = ${Preset.TS})`, async () => {
+    await presetGenerator(tree, {
+      name: 'proj',
+      preset: Preset.TS,
+      linter: 'eslint',
+      cli: 'nx',
+      standaloneConfig: false,
+    });
+
+    expect(tree.read('nx.json').toString()).toMatchSnapshot();
+  });
+
   it(`should create files (preset = ${Preset.Angular})`, async () => {
     await presetGenerator(tree, {
       name: 'proj',
