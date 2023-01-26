@@ -2,11 +2,13 @@ name: publish
 env:
   DEBUG: napi:*
   NX_RUN_GROUP: ${{ github.run_id }}-${{ github.run_attempt }}
-  NX_VERBOSE_LOGGING: true
 'on':
   push:
     tags:
-      - '*.*.*'
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
 jobs:
   build:
     if: "!contains(github.event.head_commit.message, 'skip ci')"
@@ -218,7 +220,14 @@ jobs:
         shell: bash
       - name: Publish
         run: |
+          git checkout -b publish/$GITHUB_REF_NAME
+          npm config set //registry.npmjs.org/:_authToken=$NPM_TOKEN
           yarn nx-release --local=false $GITHUB_REF_NAME
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create Github Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: ${{ github.workspace }}/CHANGELOG.md
+    env:
+      GH_TOKEN: ${{ github.token }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
