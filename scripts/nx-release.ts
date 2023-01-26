@@ -25,6 +25,10 @@ function hideFromGitIndex(uncommittedFiles: string[]) {
 (async () => {
   const options = parseArgs();
 
+  if (options.clearLocalRegistry) {
+    execSync('yarn local-registry clear');
+  }
+
   const currentLatestVersion = execSync('npm view nx version')
     .toString()
     .trim();
@@ -39,31 +43,15 @@ function hideFromGitIndex(uncommittedFiles: string[]) {
       ? 'previous'
       : 'latest';
 
-  if (options.local) {
-    process.env.LOCAL_RELEASE = 'true';
-    // with local builds, we do not want napi to modify the base package.json to include optional dependencies that do not exist.
-    // when we pass `--dry-run` as an argument to napi prepublish, it will skip modifying any files
-    // `napi prepublish` is used in package.json's `prepublishOnly` scripts
-    process.env.NAPI_DRY_RUN = '--dry-run';
-  }
-
-  if (!options.local && !options.force) {
-    console.log('Authenticating to NPM');
-    execSync('npm adduser', {
-      stdio: [0, 1, 2],
-    });
-  }
-
-  if (options.clearLocalRegistry) {
-    execSync('yarn local-registry clear');
-  }
-
   const buildCommand = 'yarn build';
   console.log(`> ${buildCommand}`);
   execSync(buildCommand, {
     stdio: [0, 1, 2],
   });
-  updateLernaJsonVersion(currentLatestVersion);
+
+  if (options.local) {
+    updateLernaJsonVersion(currentLatestVersion);
+  }
 
   if (options.local) {
     // Force all projects to be not private
@@ -83,8 +71,10 @@ function hideFromGitIndex(uncommittedFiles: string[]) {
     }
   }
 
-  if (!options.local) {
-    execSync('npx nx run-many --target=artifacts');
+  if (!options.local && process.env.NPM_TOKEN) {
+    execSync('npx nx run-many --target=artifacts', {
+      stdio: [0, 1, 2],
+    });
   }
 
   const versionOptions = {
@@ -93,15 +83,14 @@ function hideFromGitIndex(uncommittedFiles: string[]) {
     conventionalPrerelease: options.tag === 'next',
     preid: options.preid,
     forcePublish: true,
-    createRelease: options.tag !== 'next' ? 'github' : undefined,
-    noChangelog: options.tag === 'next',
+    createRelease: 'github',
     tagVersionPrefix: '',
     exact: true,
     gitRemote: options.gitRemote,
-    gitTagVersion: options.tag !== 'next',
+    gitTagVersion: true,
     message: 'chore(misc): publish %v',
     loglevel: options.loglevel ?? 'info',
-    yes: false,
+    yes: !options.local && !!process.env.NPM_TOKEN,
   };
 
   if (options.local) {
@@ -134,14 +123,23 @@ function hideFromGitIndex(uncommittedFiles: string[]) {
     distTag: distTag,
   };
 
-  if (!options.skipPublish) {
+  if (!options.local && !process.env.NPM_TOKEN) {
+    execSync('git status --ahead-behind');
+
+    await version(versionOptions);
+    console.log(
+      'Check github: https://github.com/nrwl/nx/actions/workflows/publish.yml'
+    );
+  } else if (!options.skipPublish) {
     await publish({ ...versionOptions, ...publishOptions });
   } else {
     await version(versionOptions);
     console.warn('Not Publishing because --dryRun was passed');
   }
 
-  restoreOriginalLernaJson();
+  if (options.local) {
+    restoreOriginalLernaJson();
+  }
 })();
 
 function parseArgs() {
