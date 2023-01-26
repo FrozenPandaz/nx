@@ -13,6 +13,8 @@ import * as publish from '@lerna/publish/index';
 const lernaJsonPath = join(__dirname, '../lerna.json');
 const originalLernaJson = readFileSync(lernaJsonPath);
 
+import * as enquirer from 'enquirer';
+
 function hideFromGitIndex(uncommittedFiles: string[]) {
   execSync(`git update-index --assume-unchanged ${uncommittedFiles.join(' ')}`);
 
@@ -47,12 +49,29 @@ function hideFromGitIndex(uncommittedFiles: string[]) {
     process.env.NAPI_DRY_RUN = '--dry-run';
   }
 
-  if (!options.local && !options.force) {
-    console.log('Authenticating to NPM');
-    execSync('npm adduser', {
-      stdio: [0, 1, 2],
+  if (!options.local && !process.env.NPM_TOKEN) {
+    console.log('This is a local machine');
+    execSync('git status --ahead-behind');
+
+    const { result } = await enquirer.prompt<{ result: boolean }>({
+      message: 'Do you want to tag this version and push it for publishing?',
+      type: 'confirm',
+      name: 'result',
     });
+
+    if (result) {
+      execSync(`git tag ${options.version}`);
+      execSync(`git push origin ${options.version}`);
+    }
+    console.log('Check github');
   }
+
+  // if (!options.local && !options.force) {
+  //   console.log('Authenticating to NPM');
+  //   execSync('npm adduser', {
+  //     stdio: [0, 1, 2],
+  //   });
+  // }
 
   if (options.clearLocalRegistry) {
     execSync('yarn local-registry clear');
@@ -98,10 +117,10 @@ function hideFromGitIndex(uncommittedFiles: string[]) {
     tagVersionPrefix: '',
     exact: true,
     gitRemote: options.gitRemote,
-    gitTagVersion: options.tag !== 'next',
+    gitTagVersion: false,
     message: 'chore(misc): publish %v',
     loglevel: options.loglevel ?? 'info',
-    yes: false,
+    yes: !options.local && !!process.env.NPM_TOKEN,
   };
 
   if (options.local) {
