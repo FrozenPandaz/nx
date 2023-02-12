@@ -132,7 +132,8 @@ export async function configurationGenerator(
     }
   }
 
-  const initTask = initGenerator(tree, {
+  const initTask = await initGenerator(tree, {
+    js: schema.js,
     uiFramework: schema.storybook7betaConfiguration
       ? schema.storybook7UiFramework
       : schema.uiFramework,
