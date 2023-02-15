@@ -70,9 +70,10 @@ export async function projectGenerator(
   tasks.push(addProjectDependencies(tree, options));
 
   if (options.bundler === 'vite') {
-    ensurePackage(tree, '@nrwl/vite', nxVersion);
-    // nx-ignore-next-line
-    const { viteConfigurationGenerator } = require('@nrwl/vite');
+    const { viteConfigurationGenerator } = ensurePackage(
+      '@nrwl/vite',
+      nxVersion
+    );
     const viteTask = await viteConfigurationGenerator(tree, {
       project: options.name,
       newProject: true,
@@ -101,9 +102,7 @@ export async function projectGenerator(
     options.unitTestRunner === 'vitest' &&
     options.bundler !== 'vite' // Test would have been set up already
   ) {
-    ensurePackage(tree, '@nrwl/vite', nxVersion);
-    // nx-ignore-next-line
-    const { vitestGenerator } = require('@nrwl/vite');
+    const { vitestGenerator } = ensurePackage('@nrwl/vite', nxVersion);
     const vitestTask = await vitestGenerator(tree, {
       project: options.name,
       uiFramework: 'none',
@@ -201,8 +200,7 @@ export async function addLint(
   tree: Tree,
   options: NormalizedSchema
 ): Promise<GeneratorCallback> {
-  ensurePackage(tree, '@nrwl/linter', nxVersion);
-  const { lintProjectGenerator } = require('@nrwl/linter');
+  const { lintProjectGenerator } = ensurePackage('@nrwl/linter', nxVersion);
   return lintProjectGenerator(tree, {
     project: options.name,
     linter: options.linter,
@@ -328,8 +326,7 @@ async function addJest(
   tree: Tree,
   options: NormalizedSchema
 ): Promise<GeneratorCallback> {
-  ensurePackage(tree, '@nrwl/jest', nxVersion);
-  const { jestProjectGenerator } = require('@nrwl/jest');
+  const { jestProjectGenerator } = ensurePackage('@nrwl/jest', nxVersion);
   return await jestProjectGenerator(tree, {
     ...options,
     project: options.name,

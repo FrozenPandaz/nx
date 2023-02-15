@@ -8,8 +8,9 @@ export async function angularChangeStorybookTargestGenerator(
   tree: Tree,
   schema: Schema
 ) {
-  ensurePackage(tree, '@nrwl/storybook', nxVersion);
-  const { changeStorybookTargetsGenerator } = await import('@nrwl/storybook');
+  const { changeStorybookTargetsGenerator } = ensurePackage<
+    typeof import('@nrwl/storybook')
+  >('@nrwl/storybook', nxVersion);
   await changeStorybookTargetsGenerator(tree);
 
   if (!schema.skipFormat) {

@@ -105,7 +105,7 @@ export async function applicationGenerator(
   addProject(host, options);
 
   if (options.bundler === 'vite') {
-    ensurePackage(host, '@nrwl/vite', nxVersion);
+    ensurePackage('@nrwl/vite', nxVersion);
     const { viteConfigurationGenerator } = await import('@nrwl/vite');
     // We recommend users use `import.meta.env.MODE` and other variables in their code to differentiate between production and development.
     // See: https://vitejs.dev/guide/env-and-mode.html
@@ -126,7 +126,7 @@ export async function applicationGenerator(
     });
     tasks.push(viteTask);
   } else if (options.bundler === 'webpack') {
-    ensurePackage(host, '@nrwl/webpack', nxVersion);
+    ensurePackage('@nrwl/webpack', nxVersion);
 
     const { webpackInitGenerator } = await import('@nrwl/webpack');
     const webpackInitTask = await webpackInitGenerator(host, {
@@ -136,7 +136,7 @@ export async function applicationGenerator(
   }
 
   if (options.bundler !== 'vite' && options.unitTestRunner === 'vitest') {
-    ensurePackage(host, '@nrwl/vite', nxVersion);
+    ensurePackage('@nrwl/vite', nxVersion);
     const { vitestGenerator } = await import('@nrwl/vite');
 
     const vitestTask = await vitestGenerator(host, {

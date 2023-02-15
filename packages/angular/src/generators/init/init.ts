@@ -63,7 +63,7 @@ export async function angularInitGenerator(
       devkitVersion ??=
         getInstalledPackageVersion(tree, '@angular-devkit/build-angular') ??
         angularDevkitVersion;
-      ensurePackage(tree, pkg, devkitVersion);
+      ensurePackage(pkg, devkitVersion);
     }
   });
 

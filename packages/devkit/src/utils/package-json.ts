@@ -7,6 +7,8 @@ import { clean, coerce, gt, satisfies } from 'semver';
 
 import { installPackagesTask } from '../tasks/install-packages-task';
 import { requireNx } from '../../nx';
+import { dirSync } from 'tmp';
+import { join } from 'path';
 
 const { readJson, updateJson, getPackageManagerCommand, workspaceRoot } =
   requireNx();
@@ -360,7 +362,11 @@ function requiresRemovingOfPackages(
   return needsDepsUpdate || needsDevDepsUpdate;
 }
 
+const packageMapCache = new Map<string, unknown>();
+
+// TODO(v17): Remove this function
 /**
+ * @deprecated Use {@link ensurePackage} instead. This will be removed in Nx 17
  * @typedef EnsurePackageOptions
  * @type {object}
  * @property {boolean} dev indicate if the package is a dev dependency
@@ -383,6 +389,10 @@ function requiresRemovingOfPackages(
  * @param requiredVersion the version or semver range to check (e.g. ~1.0.0, >=1.0.0 <2.0.0)
  * @param {EnsurePackageOptions} options
  */
+export function ensurePackage<T extends any = any>(
+  pkg: string,
+  requiredVersion: string
+): T;
 export function ensurePackage(
   tree: Tree,
   pkg: string,
@@ -390,45 +400,53 @@ export function ensurePackage(
   options: {
     dev?: boolean;
     throwOnMissing?: boolean;
-  } = {}
-): void {
-  // Read package and version from root package.json file.
-  const dev = options.dev ?? true;
-  const throwOnMissing = options.throwOnMissing ?? !!process.env.NX_DRY_RUN; // NX_DRY_RUN is set in `packages/nx/src/command-line/generate.ts`
-  const pmc = getPackageManagerCommand();
-
-  let version = getPackageVersion(pkg);
-
-  // Otherwise try to read in from package.json. This is needed for E2E tests to pass.
-  if (!version) {
-    const packageJson = readJson(tree, 'package.json');
-    const field = dev ? 'devDependencies' : 'dependencies';
-    version = packageJson[field]?.[pkg];
+  }
+): T {
+  if (packageMapCache.has(pkg)) {
+    return packageMapCache.get(pkg) as T;
   }
 
-  if (
-    // Special case: When running Nx unit tests, the version read from package.json is "0.0.1".
-    !(
-      pkg.startsWith('@nrwl/') &&
-      (version === '0.0.1' || requiredVersion === '0.0.1')
-    ) &&
-    // Normal case
-    !satisfies(version, requiredVersion, { includePrerelease: true })
-  ) {
-    const installCmd = `${
-      dev ? pmc.addDev : pmc.add
-    } ${pkg}@${requiredVersion}`;
-    if (throwOnMissing) {
-      throw new Error(
-        `Cannot install required package ${pkg} during a dry run. Run the generator without --dryRun, or install the package with "${installCmd}" and try again.`
-      );
-    } else {
-      execSync(installCmd, {
-        cwd: tree.root,
-        stdio: [0, 1, 2],
-      });
-    }
+  try {
+    return require(pkg);
+  } catch {}
+
+  if (process.env.NX_DRY_RUN && process.env.NX_DRY_RUN !== 'false') {
+    throw new Error(
+      'NOTE: This generator does not support --dry-run. If you are running this in Nx Console, it should execute fine once you hit the "Run" button.\n'
+    );
   }
+
+  const tempDir = dirSync().name;
+  execSync(`${getPackageManagerCommand().addDev} ${pkg}@${requiredVersion}`, {
+    cwd: tempDir,
+    stdio: [0, 1, 2],
+  });
+
+  addToNodePath(join(tempDir, 'node_modules'));
+
+  const result = require(require.resolve(pkg, {
+    paths: [tempDir],
+  }));
+
+  packageMapCache.set(pkg, result);
+
+  return result;
+}
+
+function addToNodePath(dir: string) {
+  // NODE_PATH is a delimited list of paths.
+  // The delimiter is different for windows.
+  const delimiter = require('os').platform() === 'win32' ? ';' : ':';
+
+  const paths = process.env.NODE_PATH
+    ? process.env.NODE_PATH.split(delimiter)
+    : [];
+
+  // Add the tmp path
+  paths.push(dir);
+
+  // Update the env variable.
+  process.env.NODE_PATH = paths.join(delimiter);
 }
 
 /**

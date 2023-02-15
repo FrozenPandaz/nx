@@ -6,7 +6,7 @@ export async function addJest(
   host: Tree,
   options: NormalizedSchema
 ): Promise<GeneratorCallback> {
-  ensurePackage(host, '@nrwl/jest', nxVersion);
+  ensurePackage('@nrwl/jest', nxVersion);
   const { jestProjectGenerator } = await import('@nrwl/jest');
 
   if (options.unitTestRunner !== 'jest') {

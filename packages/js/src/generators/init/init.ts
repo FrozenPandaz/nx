@@ -15,7 +15,7 @@ export async function initGenerator(
   schema: InitSchema
 ): Promise<void> {
   if (!schema.js) {
-    ensurePackage(host, 'typescript', typescriptVersion);
+    ensurePackage('typescript', typescriptVersion);
   }
 
   // add tsconfig.base.json

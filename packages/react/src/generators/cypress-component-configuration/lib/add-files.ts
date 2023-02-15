@@ -58,7 +58,7 @@ export async function addFiles(
     options.bundler === 'webpack' ||
     (!options.bundler && actualBundler === 'webpack')
   ) {
-    ensurePackage(tree, '@nrwl/webpack', nxVersion);
+    ensurePackage('@nrwl/webpack', nxVersion);
   }
 
   if (options.generateTests) {

@@ -70,7 +70,7 @@ export async function addLint(
   tree: Tree,
   options: NormalizedSchema
 ): Promise<GeneratorCallback> {
-  ensurePackage(tree, '@nrwl/linter', nxVersion);
+  ensurePackage('@nrwl/linter', nxVersion);
   const { lintProjectGenerator } = require('@nrwl/linter');
   return lintProjectGenerator(tree, {
     project: options.name,
@@ -172,7 +172,7 @@ async function addJest(
   tree: Tree,
   options: NormalizedSchema
 ): Promise<GeneratorCallback> {
-  ensurePackage(tree, '@nrwl/jest', nxVersion);
+  ensurePackage('@nrwl/jest', nxVersion);
   const { jestProjectGenerator } = require('@nrwl/jest');
   return await jestProjectGenerator(tree, {
     ...options,
@@ -188,7 +188,7 @@ async function addJest(
 
 function addTypescript(tree: Tree, options: NormalizedSchema) {
   if (!options.js) {
-    ensurePackage(tree, 'typescript', typescriptVersion);
+    ensurePackage('typescript', typescriptVersion);
   }
 
   // add tsconfig.base.json

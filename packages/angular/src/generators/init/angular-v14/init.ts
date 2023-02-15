@@ -47,7 +47,7 @@ export async function angularInitGenerator(
       devkitVersion ??=
         getInstalledPackageVersion(host, '@angular-devkit/build-angular') ??
         backwardCompatibleVersions.angularV14.angularDevkitVersion;
-      ensurePackage(host, pkg, devkitVersion);
+      ensurePackage(pkg, devkitVersion);
     }
   });
 

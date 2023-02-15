@@ -24,7 +24,7 @@ export const WORKSPACE_RULES_PROJECT_NAME = 'eslint-rules';
 export const WORKSPACE_PLUGIN_DIR = 'tools/eslint-rules';
 
 export async function lintWorkspaceRulesProjectGenerator(tree: Tree) {
-  ensurePackage(tree, '@nrwl/jest/', nxVersion);
+  ensurePackage('@nrwl/jest/', nxVersion);
   const { addPropertyToJestConfig, jestProjectGenerator } = await import(
     '@nrwl/jest'
   );

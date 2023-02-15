@@ -20,7 +20,7 @@ export async function componentTestGenerator(
   tree: Tree,
   options: ComponentTestSchema
 ) {
-  ensurePackage(tree, '@nrwl/cypress', nxVersion);
+  ensurePackage('@nrwl/cypress', nxVersion);
   const { assertMinimumCypressVersion } = await import(
     '@nrwl/cypress/src/utils/cypress-version'
   );
