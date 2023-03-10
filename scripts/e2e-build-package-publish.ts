@@ -46,10 +46,13 @@ async function updateVersionsAndPublishPackages() {
   const isVerbose =
     process.env.NX_VERBOSE_LOGGING === 'true' ||
     process.argv.includes('--verbose');
-  const response = execSync(`yarn nx-release major --local`, {
-    stdio: isVerbose ? 'inherit' : 'pipe',
-    encoding: 'utf8',
-  });
+  const response = execSync(
+    `yarn nx-release major --local --clearLocalRegistry=false`,
+    {
+      stdio: isVerbose ? 'inherit' : 'pipe',
+      encoding: 'utf8',
+    }
+  );
   // extract published version
   if (!isVerbose) {
     const value = response.match(/Successfully published:\s+ - .+@(.*)/);
