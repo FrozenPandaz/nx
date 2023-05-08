@@ -1,0 +1,39 @@
+{
+  "name": "github-maintenance-leaderboard",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "github-maintenance-leaderboard/src",
+  "targets": {
+    "build": {
+      "executor": "@nx/deno:emit",
+      "outputs": ["dist/github-maintenance-leaderboard"],
+      "options": {
+        "main": "github-maintenance-leaderboard/src/main.ts",
+        "outputFile": "dist/github-maintenance-leaderboard/main.js",
+        "denoConfig": "github-maintenance-leaderboard/deno.json"
+      }
+    },
+    "execute": {
+      "executor": "@nx/deno:run",
+      "options": {
+        "buildTarget": "github-maintenance-leaderboard:build",
+        "watch": true
+      }
+    },
+    "test": {
+      "executor": "@nx/deno:test",
+      "outputs": ["coverage/github-maintenance-leaderboard"],
+      "options": {
+        "coverageDirectory": "coverage/github-maintenance-leaderboard",
+        "denoConfig": "github-maintenance-leaderboard/deno.json"
+      }
+    },
+    "lint": {
+      "executor": "@nx/deno:lint",
+      "options": {
+        "denoConfig": "github-maintenance-leaderboard/deno.json"
+      }
+    }
+  },
+  "tags": []
+}
