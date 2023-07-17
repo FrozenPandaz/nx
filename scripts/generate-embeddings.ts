@@ -4,17 +4,17 @@
 import { createClient } from '@supabase/supabase-js';
 import { createHash } from 'crypto';
 import dotenv from 'dotenv';
-import { readdir, readFile, stat } from 'fs/promises';
+import { readFile } from 'fs/promises';
 import GithubSlugger from 'github-slugger';
 import { fromMarkdown } from 'mdast-util-from-markdown';
 import { toMarkdown } from 'mdast-util-to-markdown';
 import { toString } from 'mdast-util-to-string';
 import 'openai';
 import { Configuration, OpenAIApi } from 'openai';
-import { basename, dirname, join } from 'path';
 import { u } from 'unist-builder';
 import { inspect } from 'util';
 import yargs from 'yargs';
+import * as mapJson from '../docs/map.json';
 
 dotenv.config();
 
@@ -92,56 +92,13 @@ function processMdxForSearch(content: string): ProcessedMdx {
 
 type WalkEntry = {
   path: string;
-  parentPath?: string;
 };
-
-async function walk(dir: string, parentPath?: string): Promise<WalkEntry[]> {
-  const immediateFiles = await readdir(dir);
-
-  const recursiveFiles = await Promise.all(
-    immediateFiles.map(async (file) => {
-      const path = join(dir, file);
-      const stats = await stat(path);
-      if (stats.isDirectory()) {
-        // Keep track of document hierarchy (if this dir has corresponding doc file)
-        const docPath = `${basename(path)}.md`;
-
-        return walk(
-          path,
-          immediateFiles.includes(docPath)
-            ? join(dirname(path), docPath)
-            : parentPath
-        );
-      } else if (stats.isFile()) {
-        return [
-          {
-            path: path,
-            parentPath,
-          },
-        ];
-      } else {
-        return [];
-      }
-    })
-  );
-
-  const flattenedFiles = recursiveFiles.reduce(
-    (all, folderContents) => all.concat(folderContents),
-    []
-  );
-
-  return flattenedFiles.sort((a, b) => a.path.localeCompare(b.path));
-}
 
 abstract class BaseEmbeddingSource {
   checksum?: string;
   sections?: Section[];
 
-  constructor(
-    public source: string,
-    public path: string,
-    public parentPath?: string
-  ) {}
+  constructor(public source: string, public path: string) {}
 
   abstract load(): Promise<{
     checksum: string;
@@ -152,17 +109,9 @@ abstract class BaseEmbeddingSource {
 class MarkdownEmbeddingSource extends BaseEmbeddingSource {
   type: 'markdown' = 'markdown';
 
-  constructor(
-    source: string,
-    public filePath: string,
-    public parentFilePath?: string
-  ) {
+  constructor(source: string, public filePath: string) {
     const path = filePath.replace(/^docs/, '').replace(/\.md?$/, '');
-    const parentPath = parentFilePath
-      ?.replace(/^docs/, '')
-      .replace(/\.md?$/, '');
-
-    super(source, path, parentPath);
+    super(source, path);
   }
 
   async load() {
@@ -221,9 +170,9 @@ async function generateEmbeddings() {
   );
 
   const embeddingSources: EmbeddingSource[] = [
-    ...(await walk('docs'))
-      .filter(({ path }) => /\.md?$/.test(path))
-      .map((entry) => new MarkdownEmbeddingSource('guide', entry.path)),
+    ...getAllFiles(mapJson).map(
+      (entry) => new MarkdownEmbeddingSource('guide', entry.path)
+    ),
   ];
 
   console.log(`Discovered ${embeddingSources.length} pages`);
@@ -235,7 +184,7 @@ async function generateEmbeddings() {
   }
 
   for (const embeddingSource of embeddingSources) {
-    const { type, source, path, parentPath } = embeddingSource;
+    const { type, source, path } = embeddingSource;
 
     try {
       const { checksum, sections } = await embeddingSource.load();
@@ -243,7 +192,7 @@ async function generateEmbeddings() {
       // Check for existing page in DB and compare checksums
       const { error: fetchPageError, data: existingPage } = await supabaseClient
         .from('nods_page')
-        .select('id, path, checksum, parentPage:parent_page_id(id, path)')
+        .select('id, path, checksum')
         .filter('path', 'eq', path)
         .limit(1)
         .maybeSingle();
@@ -252,41 +201,8 @@ async function generateEmbeddings() {
         throw fetchPageError;
       }
 
-      type Singular<T> = T extends any[] ? undefined : T;
-
       // We use checksum to determine if this page & its sections need to be regenerated
       if (!shouldRefresh && existingPage?.checksum === checksum) {
-        const existingParentPage =
-          existingPage?.parentPage as unknown as Singular<
-            typeof existingPage.parentPage
-          >;
-
-        // If parent page changed, update it
-        if (existingParentPage?.['path'] !== parentPath) {
-          console.log(
-            `[${path}] Parent page has changed. Updating to '${parentPath}'...`
-          );
-          const { error: fetchParentPageError, data: parentPage } =
-            await supabaseClient
-              .from('nods_page')
-              .select()
-              .filter('path', 'eq', parentPath)
-              .limit(1)
-              .maybeSingle();
-
-          if (fetchParentPageError) {
-            throw fetchParentPageError;
-          }
-
-          const { error: updatePageError } = await supabaseClient
-            .from('nods_page')
-            .update({ parent_page_id: parentPage?.id })
-            .filter('id', 'eq', existingPage.id);
-
-          if (updatePageError) {
-            throw updatePageError;
-          }
-        }
         continue;
       }
 
@@ -311,18 +227,6 @@ async function generateEmbeddings() {
         }
       }
 
-      const { error: fetchParentPageError, data: parentPage } =
-        await supabaseClient
-          .from('nods_page')
-          .select()
-          .filter('path', 'eq', parentPath)
-          .limit(1)
-          .maybeSingle();
-
-      if (fetchParentPageError) {
-        throw fetchParentPageError;
-      }
-
       // Create/update page record. Intentionally clear checksum until we
       // have successfully generated all page sections.
       const { error: upsertPageError, data: page } = await supabaseClient
@@ -333,7 +237,6 @@ async function generateEmbeddings() {
             path,
             type,
             source,
-            parent_page_id: parentPage?.id,
           },
           { onConflict: 'path' }
         )
@@ -425,6 +328,44 @@ async function generateEmbeddings() {
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+interface Item {
+  name: string;
+  id: string;
+  file?: string;
+  description?: string;
+  itemList?: Item[];
+}
+
+interface DocumentationMapReference {
+  $schema: string;
+  title: string;
+  description: string;
+  content: Item[];
+}
+
+function getAllFiles(doc: DocumentationMapReference): WalkEntry[] {
+  const files: WalkEntry[] = [];
+
+  function traverse(itemList: Item[]) {
+    for (const item of itemList) {
+      if (item.file && item.file.length > 0) {
+        // we can exclude some docs here, eg. the deprecated ones
+        files.push({ path: `docs/${item.file}.md` });
+      }
+
+      if (item.itemList) {
+        traverse(item.itemList);
+      }
+    }
+  }
+
+  for (const item of doc.content) {
+    traverse([item]);
+  }
+
+  return files;
 }
 
 async function main() {
