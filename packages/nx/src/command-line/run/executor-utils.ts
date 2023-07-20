@@ -14,6 +14,7 @@ import {
   resolveSchema,
 } from '../../config/schema-utils';
 import { getNxRequirePaths } from '../../utils/installation-directory';
+import { getPluginInformation } from 'nx/src/utils/plugins/plugin-capabilities';
 
 export function normalizeExecutorSchema(
   schema: Partial<ExecutorConfig['schema']>
@@ -35,49 +36,69 @@ export function getExecutorInformation(
   nodeModule: string,
   executor: string,
   root: string
-): ExecutorConfig & { isNgCompat: boolean; isNxExecutor: boolean } {
+) {
   try {
-    const { executorsFilePath, executorConfig, isNgCompat } = readExecutorsJson(
-      nodeModule,
-      executor,
-      root
-    );
-    const executorsDir = dirname(executorsFilePath);
-    const schemaPath = resolveSchema(executorConfig.schema, executorsDir);
-    const schema = normalizeExecutorSchema(readJsonFile(schemaPath));
+    const executorsJson = readExecutorsJson(nodeModule, executor, root);
 
-    const implementationFactory = getImplementationFactory<Executor>(
-      executorConfig.implementation,
-      executorsDir
-    );
-
-    const batchImplementationFactory = executorConfig.batchImplementation
-      ? getImplementationFactory<TaskGraphExecutor>(
-          executorConfig.batchImplementation,
-          executorsDir
-        )
-      : null;
-
-    const hasherFactory = executorConfig.hasher
-      ? getImplementationFactory<CustomHasher>(
-          executorConfig.hasher,
-          executorsDir
-        )
-      : null;
-
-    return {
-      schema,
-      implementationFactory,
-      batchImplementationFactory,
-      hasherFactory,
-      isNgCompat,
-      isNxExecutor: !isNgCompat,
-    };
+    return _getExecutorInformation(executorsJson);
   } catch (e) {
     throw new Error(
       `Unable to resolve ${nodeModule}:${executor}.\n${e.message}`
     );
   }
+}
+
+export async function getExecutorInformation(
+  nodeModule: string,
+  executor: string,
+  root: string
+) {
+  try {
+    const executorsJson = await readExecutorsJson(nodeModule, executor, root);
+
+    return _getExecutorInformation(executorsJson);
+  } catch (e) {
+    throw new Error(
+      `Unable to resolve ${nodeModule}:${executor}.\n${e.message}`
+    );
+  }
+}
+
+function _getExecutorInformation(
+  executorsJson: any
+): ExecutorConfig & { isNgCompat: boolean; isNxExecutor: boolean } {
+  const { executorsFilePath, executorConfig, isNgCompat } = executorsJson;
+  const executorsDir = dirname(executorsFilePath);
+  const schemaPath = resolveSchema(executorConfig.schema, executorsDir);
+  const schema = normalizeExecutorSchema(readJsonFile(schemaPath));
+
+  const implementationFactory = getImplementationFactory<Executor>(
+    executorConfig.implementation,
+    executorsDir
+  );
+
+  const batchImplementationFactory = executorConfig.batchImplementation
+    ? getImplementationFactory<TaskGraphExecutor>(
+        executorConfig.batchImplementation,
+        executorsDir
+      )
+    : null;
+
+  const hasherFactory = executorConfig.hasher
+    ? getImplementationFactory<CustomHasher>(
+        executorConfig.hasher,
+        executorsDir
+      )
+    : null;
+
+  return {
+    schema,
+    implementationFactory,
+    batchImplementationFactory,
+    hasherFactory,
+    isNgCompat,
+    isNxExecutor: !isNgCompat,
+  };
 }
 
 function readExecutorsJson(
@@ -94,12 +115,15 @@ function readExecutorsJson(
   };
   isNgCompat: boolean;
 } {
-  const { json: packageJson, path: packageJsonPath } = readPluginPackageJson(
-    nodeModule,
-    root
-      ? [root, __dirname, process.cwd(), ...getNxRequirePaths()]
-      : [__dirname, process.cwd(), ...getNxRequirePaths()]
-  );
+  const plugin = await getPluginInformation(root, nodeModule);
+
+  return plugin.getExecutors();
+  // const { json: packageJson, path: packageJsonPath } = readPluginPackageJson(
+  //   nodeModule,
+  //   root
+  //     ? [root, __dirname, process.cwd(), ...getNxRequirePaths()]
+  //     : [__dirname, process.cwd(), ...getNxRequirePaths()]
+  // );
   const executorsFile = packageJson.executors ?? packageJson.builders;
 
   if (!executorsFile) {

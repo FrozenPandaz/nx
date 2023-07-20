@@ -290,6 +290,7 @@ function lookupLocalPlugin(importPath: string, root = workspaceRoot) {
   const workspace = new Workspaces(root).readProjectsConfigurations({
     _ignorePluginInference: true,
   });
+  retrieveProjectConfigurations();
   const plugin = findNxProjectForImportPath(importPath, workspace, root);
   if (!plugin) {
     return null;

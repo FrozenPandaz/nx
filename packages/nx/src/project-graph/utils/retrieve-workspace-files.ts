@@ -2,6 +2,7 @@ import { performance } from 'perf_hooks';
 import {
   buildProjectsConfigurationsFromProjectPaths,
   getGlobPatternsFromPackageManagerWorkspaces,
+  getGlobPatternsFromPlugins,
   getGlobPatternsFromPluginsAsync,
   mergeTargetConfigurations,
   readTargetDefaultsForTarget,
@@ -20,6 +21,7 @@ import {
 import { NxJsonConfiguration } from '../../config/nx-json';
 import { FileData, ProjectFileMap } from '../../config/project-graph';
 import type { NxWorkspaceFiles } from '../../native';
+import { getProjectConfigurations } from '../../native';
 
 /**
  * Walks the workspace directory to create the `projectFileMap`, `ProjectConfigurations` and `allWorkspaceFiles`
@@ -85,8 +87,31 @@ export async function retrieveProjectConfigurations(
   workspaceRoot: string,
   nxJson: NxJsonConfiguration
 ): Promise<Record<string, ProjectConfiguration>> {
-  const { getProjectConfigurations } = require('../../native');
   const globs = await configurationGlobs(workspaceRoot, nxJson);
+
+  return _retrieveProjectConfigurations(workspaceRoot, nxJson, globs);
+}
+
+/**
+ * Walk through the workspace and return `ProjectConfigurations`. Only use this if the projectFileMap is not needed.
+ *
+ * @param workspaceRoot
+ * @param nxJson
+ */
+export function retrieveProjectConfigurationsSync(
+  workspaceRoot: string,
+  nxJson: NxJsonConfiguration
+): Record<string, ProjectConfiguration> {
+  const globs = configurationGlobsSync(workspaceRoot, nxJson);
+
+  return _retrieveProjectConfigurations(workspaceRoot, nxJson, globs);
+}
+function _retrieveProjectConfigurations(
+  workspaceRoot: string,
+  nxJson: NxJsonConfiguration,
+  globs: string[]
+): Record<string, ProjectConfiguration> {
+  const { getProjectConfigurations } = require('../../native');
   return getProjectConfigurations(
     workspaceRoot,
     globs,
@@ -185,6 +210,24 @@ async function configurationGlobs(
   nxJson: NxJsonConfiguration
 ): Promise<string[]> {
   let pluginGlobs = await getGlobPatternsFromPluginsAsync(
+    nxJson,
+    getNxRequirePaths(workspaceRoot),
+    workspaceRoot
+  );
+
+  return [
+    'project.json',
+    '**/project.json',
+    ...pluginGlobs,
+    ...getGlobPatternsFromPackageManagerWorkspaces(workspaceRoot),
+  ];
+}
+
+function configurationGlobsSync(
+  workspaceRoot: string,
+  nxJson: NxJsonConfiguration
+) {
+  let pluginGlobs = getGlobPatternsFromPlugins(
     nxJson,
     getNxRequirePaths(workspaceRoot),
     workspaceRoot

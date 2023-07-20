@@ -31,16 +31,27 @@ function tryGetCollection<T extends object>(
   }
 }
 
+export async function getPluginInformation(
+  workspaceRoot: string,
+  pluginName: string
+): Promise<{ load: () => Promise<NxPlugin>; getExecutors; getGenerators }> {
+  return {
+    getExecutors,
+    getGenerators,
+    load: () => NxPLugin,
+  };
+}
+
 export async function getPluginCapabilities(
   workspaceRoot: string,
   pluginName: string
 ): Promise<PluginCapabilities | null> {
   try {
-    const { json: packageJson, path: packageJsonPath } = readPluginPackageJson(
-      pluginName,
-      getNxRequirePaths(workspaceRoot)
+    const pluginInformation = await getPluginInformation(
+      workspaceRoot,
+      pluginName
     );
-    const pluginModule = await tryGetModule(packageJson, workspaceRoot);
+    const pluginModule = await pluginInformation.load();
     return {
       name: pluginName,
       generators: {
