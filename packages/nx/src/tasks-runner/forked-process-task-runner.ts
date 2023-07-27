@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'fs';
-import * as dotenv from 'dotenv';
+import { config as loadDotEnvFile } from 'dotenv';
 import { ChildProcess, fork, Serializable } from 'child_process';
 import * as chalk from 'chalk';
 import * as logTransformer from 'strong-log-transformer';
@@ -17,6 +17,7 @@ import {
 import { stripIndents } from '../utils/strip-indents';
 import { Task, TaskGraph } from '../config/task-graph';
 import { Transform } from 'stream';
+import { ProcessEnv } from 'npm-run-path';
 
 const workerPath = join(__dirname, './batch/run-batch.js');
 
@@ -301,8 +302,6 @@ export class ForkedProcessTaskRunner {
   // region Environment Variables
   private getEnvVariablesForProcess() {
     return {
-      // Start With Dotenv Variables
-      ...this.getDotenvVariablesForForkedProcess(),
       // User Process Env Variables override Dotenv Variables
       ...process.env,
       // Nx Env Variables overrides everything
@@ -320,9 +319,11 @@ export class ForkedProcessTaskRunner {
   ) {
     const res = {
       // Start With Dotenv Variables
-      ...this.getDotenvVariablesForTask(task),
-      // User Process Env Variables override Dotenv Variables
-      ...process.env,
+      ...(process.env.NX_LOAD_DOT_ENV_FILES === 'true'
+        ? this.loadDotEnvFilesForTask(task, {
+            ...process.env,
+          })
+        : {}),
       // Nx Env Variables overrides everything
       ...this.getNxEnvVariablesForTask(
         task,
@@ -397,57 +398,50 @@ export class ForkedProcessTaskRunner {
     };
   }
 
-  private getDotenvVariablesForForkedProcess() {
-    return {
-      ...parseEnv('.env'),
-      ...parseEnv('.local.env'),
-      ...parseEnv('.env.local'),
-    };
-  }
+  private loadDotEnvFilesForTask(task: Task, environmentVariables: ProcessEnv) {
+    const dotEnvFiles = [
+      // Load DotEnv Files for a configuration in the project root
+      ...(task.target.configuration
+        ? [
+            `${task.projectRoot}/.env.${task.target.target}.${task.target.configuration}`,
+            `${task.projectRoot}/.env.${task.target.configuration}`,
+            `${task.projectRoot}/.${task.target.target}.${task.target.configuration}.env`,
+            `${task.projectRoot}/.${task.target.configuration}.env`,
+          ]
+        : []),
 
-  private getDotenvVariablesForTask(task: Task) {
-    if (process.env.NX_LOAD_DOT_ENV_FILES == 'true') {
-      return {
-        ...this.getDotenvVariablesForForkedProcess(),
-        ...parseEnv(`.${task.target.target}.env`),
-        ...parseEnv(`.env.${task.target.target}`),
-        ...(task.target.configuration
-          ? {
-              ...parseEnv(`.${task.target.configuration}.env`),
-              ...parseEnv(
-                `.${task.target.target}.${task.target.configuration}.env`
-              ),
-              ...parseEnv(`.env.${task.target.configuration}`),
-              ...parseEnv(
-                `.env.${task.target.target}.${task.target.configuration}`
-              ),
-            }
-          : {}),
-        ...parseEnv(`${task.projectRoot}/.env`),
-        ...parseEnv(`${task.projectRoot}/.local.env`),
-        ...parseEnv(`${task.projectRoot}/.env.local`),
-        ...parseEnv(`${task.projectRoot}/.${task.target.target}.env`),
-        ...parseEnv(`${task.projectRoot}/.env.${task.target.target}`),
-        ...(task.target.configuration
-          ? {
-              ...parseEnv(
-                `${task.projectRoot}/.${task.target.configuration}.env`
-              ),
-              ...parseEnv(
-                `${task.projectRoot}/.${task.target.target}.${task.target.configuration}.env`
-              ),
-              ...parseEnv(
-                `${task.projectRoot}/.env.${task.target.configuration}`
-              ),
-              ...parseEnv(
-                `${task.projectRoot}/.env.${task.target.target}.${task.target.configuration}`
-              ),
-            }
-          : {}),
-      };
-    } else {
-      return {};
+      // Load DotEnv Files for a target in the project root
+      `${task.projectRoot}/.env.${task.target.target}`,
+      `${task.projectRoot}/.${task.target.target}.env`,
+      `${task.projectRoot}/.env.local`,
+      `${task.projectRoot}/.local.env`,
+      `${task.projectRoot}/.env`,
+
+      // Load DotEnv Files for a configuration in the workspace root
+      ...(task.target.configuration
+        ? [
+            `.env.${task.target.target}.${task.target.configuration}`,
+            `.env.${task.target.configuration}`,
+            `.${task.target.target}.${task.target.configuration}.env`,
+            `.${task.target.configuration}.env`,
+          ]
+        : []),
+
+      // Load DotEnv Files for a target in the workspace root
+      `.env.${task.target.target}`,
+      `.${task.target.target}.env`,
+    ];
+
+    for (const file of dotEnvFiles) {
+      loadDotEnvFile({
+        path: file,
+        processEnv: environmentVariables,
+        // Do not override existing env variables as we load
+        override: false,
+      });
     }
+
+    return environmentVariables;
   }
 
   // endregion Environment Variables
@@ -505,13 +499,6 @@ export class ForkedProcessTaskRunner {
       // will store results to the cache and will terminate this process
     });
   }
-}
-
-function parseEnv(path: string) {
-  try {
-    const envContents = readFileSync(path);
-    return dotenv.parse(envContents);
-  } catch (e) {}
 }
 
 const colors = [
