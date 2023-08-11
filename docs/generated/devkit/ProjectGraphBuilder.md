@@ -6,6 +6,12 @@ A class which builds up a project graph
 
 The ProjectGraphProcessor has been deprecated. Use a [CreateNodes](../../devkit/documents/CreateNodes) and/or a [CreateDependencies](../../devkit/documents/CreateDependencies) instead. This will be removed in Nx 18.
 
+These will be removed in v18.
+
+- For Workspaces.readWorkspaceConfiguration, use retrieveProjectConfigurations/retrieveProjectConfigurationsWithAngularProjects instead.
+- For Workspaces.readProjectsConfigurations, use retrieveProjectConfigurations/retrieveProjectConfigurationsWithAngularProjects instead.
+- For Workspaces.readNxJson, use readNxJsonFrisk instead.
+
 ## Table of contents
 
 ### Constructors
