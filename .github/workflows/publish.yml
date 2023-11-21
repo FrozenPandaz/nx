@@ -8,167 +8,187 @@ on:
   release:
     types: [published]
 jobs:
-  build:
-    if: "!contains(github.event.head_commit.message, 'skip ci')"
-    strategy:
-      fail-fast: false
-      matrix:
-        settings:
-          - host: macos-latest
-            target: x86_64-apple-darwin
-            build: |
-              pnpm nx run-many --target=build-native -- --target=x86_64-apple-darwin
-          - host: windows-latest
-            build: pnpm nx run-many --target=build-native -- --target=x86_64-pc-windows-msvc
-            target: x86_64-pc-windows-msvc
-          # Windows 32bit (not needed)
-          # - host: windows-latest
-          #   build: |
-          #     yarn nx -- run-many --target=build-native -- --target=i686-pc-windows-msvc
-          #   target: i686-pc-windows-msvc
-          - host: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
-            build: |-
-              set -e &&
-              pnpm --version &&
-              pnpm nx run-many --target=build-native -- --target=x86_64-unknown-linux-gnu
-          - host: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
-            build: set -e && pnpm nx run-many --target=build-native -- --target=x86_64-unknown-linux-musl
-          - host: macos-latest
-            target: aarch64-apple-darwin
-            build: |
-              sudo rm -Rf /Library/Developer/CommandLineTools/SDKs/*;
-              export CC=$(xcrun -f clang);
-              export CXX=$(xcrun -f clang++);
-              SYSROOT=$(xcrun --sdk macosx --show-sdk-path);
-              export CFLAGS="-isysroot $SYSROOT -isystem $SYSROOT";
-              pnpm nx run-many --target=build-native -- --target=aarch64-apple-darwin
-          - host: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
-            build: |-
-              set -e &&
-              pnpm --version &&
-              pnpm nx run-many --target=build-native -- --target=aarch64-unknown-linux-gnu
-          - host: ubuntu-latest
-            target: armv7-unknown-linux-gnueabihf
-            setup: |
-              sudo apt-get update
-              sudo apt-get install gcc-arm-linux-gnueabihf -y
-            build: |
-              pnpm nx run-many --target=build-native -- --target=armv7-unknown-linux-gnueabihf
-          # Android (not needed)
-          # - host: ubuntu-latest
-          #   target: aarch64-linux-android
-          #   build: |
-          #     pnpm nx run-many --target=build-native -- --target=aarch64-linux-android
-          # - host: ubuntu-latest
-          #   target: armv7-linux-androideabi
-          #   build: |
-          #     pnpm nx run-many --target=build-native -- --target=armv7-linux-androideabi
-          - host: ubuntu-latest
-            target: aarch64-unknown-linux-musl
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
-            build: |-
-              set -e &&
-              rustup target add aarch64-unknown-linux-musl &&
-              pnpm nx run-many --target=build-native -- --target=aarch64-unknown-linux-musl
-          - host: windows-latest
-            target: aarch64-pc-windows-msvc
-            build: pnpm nx run-many --target=build-native -- --target=aarch64-pc-windows-msvc
-    name: stable - ${{ matrix.settings.target }} - node@18
-    runs-on: ${{ matrix.settings.host }}
-    steps:
-      - uses: actions/checkout@v3
-
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 8.2
-
-      - name: Setup node
-        uses: actions/setup-node@v3
-        if: ${{ !matrix.settings.docker }}
-        with:
-          node-version: 18
-          check-latest: true
-          cache: 'pnpm'
-
-      - name: Install
-        uses: dtolnay/rust-toolchain@stable
-        if: ${{ !matrix.settings.docker }}
-        with:
-          targets: ${{ matrix.settings.target }}
-
-      - name: Cache cargo
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            .cargo-cache
-            target/
-          key: ${{ matrix.settings.target }}-cargo-registry
-      - uses: goto-bus-stop/setup-zig@v2
-        if: ${{ matrix.settings.target == 'armv7-unknown-linux-gnueabihf' }}
-        with:
-          version: 0.10.0
-      - name: Setup toolchain
-        run: ${{ matrix.settings.setup }}
-        if: ${{ matrix.settings.setup }}
-        shell: bash
-      - name: Setup node x86
-        if: matrix.settings.target == 'i686-pc-windows-msvc'
-        run: yarn config set supportedArchitectures.cpu "ia32"
-        shell: bash
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-        timeout-minutes: 30
-      - name: Setup node x86
-        uses: actions/setup-node@v3
-        if: matrix.settings.target == 'i686-pc-windows-msvc'
-        with:
-          node-version: 18
-          check-latest: true
-          cache: pnpm
-          architecture: x86
-      - name: Build in docker
-        uses: addnab/docker-run-action@v3
-        if: ${{ matrix.settings.docker }}
-        with:
-          image: ${{ matrix.settings.docker }}
-          options: --user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/usr/local/cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/usr/local/cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/usr/local/cargo/registry/index -v ${{ github.workspace }}:/build -w /build
-          run: ${{ matrix.settings.build }}
-      - name: Build
-        run: ${{ matrix.settings.build }}
-        if: ${{ !matrix.settings.docker }}
-        shell: bash
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: bindings-${{ matrix.settings.target }}
-          path: packages/**/*.node
-          if-no-files-found: error
+#  build:
+#    if: "!contains(github.event.head_commit.message, 'skip ci')"
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        settings:
+#          - host: macos-latest
+#            target: x86_64-apple-darwin
+#            build: |
+#              pnpm nx run-many --target=build-native -- --target=x86_64-apple-darwin
+#          - host: windows-latest
+#            build: pnpm nx run-many --target=build-native -- --target=x86_64-pc-windows-msvc
+#            target: x86_64-pc-windows-msvc
+#          # Windows 32bit (not needed)
+#          # - host: windows-latest
+#          #   build: |
+#          #     yarn nx -- run-many --target=build-native -- --target=i686-pc-windows-msvc
+#          #   target: i686-pc-windows-msvc
+#          - host: ubuntu-latest
+#            target: x86_64-unknown-linux-gnu
+#            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+#            build: |-
+#              set -e &&
+#              pnpm --version &&
+#              pnpm nx run-many --target=build-native -- --target=x86_64-unknown-linux-gnu
+#          - host: ubuntu-latest
+#            target: x86_64-unknown-linux-musl
+#            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+#            build: set -e && pnpm nx run-many --target=build-native -- --target=x86_64-unknown-linux-musl
+#          - host: macos-latest
+#            target: aarch64-apple-darwin
+#            build: |
+#              sudo rm -Rf /Library/Developer/CommandLineTools/SDKs/*;
+#              export CC=$(xcrun -f clang);
+#              export CXX=$(xcrun -f clang++);
+#              SYSROOT=$(xcrun --sdk macosx --show-sdk-path);
+#              export CFLAGS="-isysroot $SYSROOT -isystem $SYSROOT";
+#              pnpm nx run-many --target=build-native -- --target=aarch64-apple-darwin
+#          - host: ubuntu-latest
+#            target: aarch64-unknown-linux-gnu
+#            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
+#            build: |-
+#              set -e &&
+#              pnpm --version &&
+#              pnpm nx run-many --target=build-native -- --target=aarch64-unknown-linux-gnu
+#          - host: ubuntu-latest
+#            target: armv7-unknown-linux-gnueabihf
+#            setup: |
+#              sudo apt-get update
+#              sudo apt-get install gcc-arm-linux-gnueabihf -y
+#            build: |
+#              pnpm nx run-many --target=build-native -- --target=armv7-unknown-linux-gnueabihf
+#          # Android (not needed)
+#          # - host: ubuntu-latest
+#          #   target: aarch64-linux-android
+#          #   build: |
+#          #     pnpm nx run-many --target=build-native -- --target=aarch64-linux-android
+#          # - host: ubuntu-latest
+#          #   target: armv7-linux-androideabi
+#          #   build: |
+#          #     pnpm nx run-many --target=build-native -- --target=armv7-linux-androideabi
+#          - host: ubuntu-latest
+#            target: aarch64-unknown-linux-musl
+#            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+#            build: |-
+#              set -e &&
+#              rustup target add aarch64-unknown-linux-musl &&
+#              pnpm nx run-many --target=build-native -- --target=aarch64-unknown-linux-musl
+#          - host: windows-latest
+#            target: aarch64-pc-windows-msvc
+#            build: pnpm nx run-many --target=build-native -- --target=aarch64-pc-windows-msvc
+#    name: stable - ${{ matrix.settings.target }} - node@18
+#    runs-on: ${{ matrix.settings.host }}
+#    steps:
+#      - uses: actions/checkout@v3
+#
+#      - uses: pnpm/action-setup@v2
+#        with:
+#          version: 8.2
+#
+#      - name: Setup node
+#        uses: actions/setup-node@v3
+#        if: ${{ !matrix.settings.docker }}
+#        with:
+#          node-version: 18
+#          check-latest: true
+#          cache: 'pnpm'
+#
+#      - name: Install
+#        uses: dtolnay/rust-toolchain@stable
+#        if: ${{ !matrix.settings.docker }}
+#        with:
+#          targets: ${{ matrix.settings.target }}
+#
+#      - name: Cache cargo
+#        uses: actions/cache@v3
+#        with:
+#          path: |
+#            ~/.cargo/registry/index/
+#            ~/.cargo/registry/cache/
+#            ~/.cargo/git/db/
+#            .cargo-cache
+#            target/
+#          key: ${{ matrix.settings.target }}-cargo-registry
+#      - uses: goto-bus-stop/setup-zig@v2
+#        if: ${{ matrix.settings.target == 'armv7-unknown-linux-gnueabihf' }}
+#        with:
+#          version: 0.10.0
+#      - name: Setup toolchain
+#        run: ${{ matrix.settings.setup }}
+#        if: ${{ matrix.settings.setup }}
+#        shell: bash
+#      - name: Setup node x86
+#        if: matrix.settings.target == 'i686-pc-windows-msvc'
+#        run: yarn config set supportedArchitectures.cpu "ia32"
+#        shell: bash
+#      - name: Install dependencies
+#        run: pnpm install --frozen-lockfile
+#        timeout-minutes: 30
+#      - name: Setup node x86
+#        uses: actions/setup-node@v3
+#        if: matrix.settings.target == 'i686-pc-windows-msvc'
+#        with:
+#          node-version: 18
+#          check-latest: true
+#          cache: pnpm
+#          architecture: x86
+#      - name: Build in docker
+#        uses: addnab/docker-run-action@v3
+#        if: ${{ matrix.settings.docker }}
+#        with:
+#          image: ${{ matrix.settings.docker }}
+#          options: --user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/usr/local/cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/usr/local/cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/usr/local/cargo/registry/index -v ${{ github.workspace }}:/build -w /build
+#          run: ${{ matrix.settings.build }}
+#      - name: Build
+#        run: ${{ matrix.settings.build }}
+#        if: ${{ !matrix.settings.docker }}
+#        shell: bash
+#      - name: Upload artifact
+#        uses: actions/upload-artifact@v3
+#        with:
+#          name: bindings-${{ matrix.settings.target }}
+#          path: packages/**/*.node
+#          if-no-files-found: error
   build-freebsd:
      runs-on: macos-12
      name: Build FreeBSD
      timeout-minutes: 45
      steps:
        - uses: actions/checkout@v3
+         if: ${{ !contains(github.ref, '-') }}
+       - uses: actions/cache@v3
+         if: ${{ !contains(github.ref, '-') }}
+         name: Restore Cargo Cache
+         with:
+           path: |
+             ~/.cargo/registry/index/
+             ~/.cargo/registry/cache/
+             ~/.cargo/git/db/
+             .cargo-cache
+             target/
+           key: freebsd-cargo-registry
+       - uses: actions/cache@v3
+         if: ${{ !contains(github.ref, '-') }}
+         name: Restore Pnpm Cache
+         with:
+           path: ~/.pnpm/store
+           key: ${{ hashFiles('pnpm-lock.yaml') }}-pnpm-store
        - name: Build
+         if: ${{ !contains(github.ref, '-') }}
          id: build
-         uses: cross-platform-actions/action@v0.21.0
+         uses: cross-platform-actions/action@v0.21.1
          env:
            DEBUG: napi:*
            RUSTUP_IO_THREADS: 1
+           PNPM_HOME: ~/.pnpm
          with:
            operating_system: freebsd
            version: '13.2'
            architecture: x86-64
-           environment_variables: DEBUG RUSTUP_IO_THREADS CI
+           environment_variables: DEBUG RUSTUP_IO_THREADS CI PNPM_HOME
            shell: bash
            run: |
              env
@@ -184,22 +204,28 @@ jobs:
              node -v
              echo "~~~~ pnpm --version ~~~~"
              pnpm --version
-             pwd
-             ls -lah
-             whoami
-             env
+             pnpm store path
              freebsd-version
              mkdir -p /Users/runner/work/_temp/_github_workflow
              echo "{}" > /Users/runner/work/_temp/_github_workflow/event.json
-             pnpm install --frozen-lockfile --ignore-scripts
+             pnpm install nx -D
+             ls -lah ~
+             ls -lah ~/.pnpm
              pnpm nx run-many --outputStyle stream --target=build-native -- --target=x86_64-unknown-freebsd
+             ls -lah ~/.cargo/registry
              pnpm nx reset
              rm -rf node_modules
              rm -rf dist
              echo "KILL ALL NODE PROCESSES"
-             killall node
+             killall node || true
              echo "COMPLETE"
+       - name: After build
+         if: ${{ !contains(github.ref, '-') }}
+         run: |
+           pnpm store path
+           ls -lah ~/.pnpm/store
        - name: Upload artifact
+         if: ${{ !contains(github.ref, '-') }}
          uses: actions/upload-artifact@v3
          with:
            name: bindings-freebsd
@@ -213,7 +239,6 @@ jobs:
       id-token: write
     needs:
       - build-freebsd
-      - build
     steps:
       - uses: actions/checkout@v3
       - uses: pnpm/action-setup@v2
