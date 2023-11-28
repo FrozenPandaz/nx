@@ -14,7 +14,14 @@ const cypressJsonConfig = {
 };
 export default defineConfig({
   e2e: {
-    ...nxE2EPreset(__dirname),
+    ...nxE2EPreset(__dirname, {
+      devServerTargets: {
+        dev: 'graph-client:serve-base:dev-e2e',
+        watch: 'graph-client:serve-base:watch',
+        release: 'graph-client:serve-base:release',
+        'release-static': 'graph-client:serve-base:release-static',
+      },
+    }),
     ...cypressJsonConfig,
     setupNodeEvents,
     /**
