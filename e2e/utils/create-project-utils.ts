@@ -35,6 +35,31 @@ import { resetWorkspaceContext } from 'nx/src/utils/workspace-context';
 
 let projName: string;
 
+const nxPackages = [
+  `@nx/angular`,
+  `@nx/eslint-plugin`,
+  `@nx/express`,
+  `@nx/esbuild`,
+  `@nx/jest`,
+  `@nx/js`,
+  `@nx/eslint`,
+  `@nx/nest`,
+  `@nx/next`,
+  `@nx/node`,
+  `@nx/nuxt`,
+  `@nx/plugin`,
+  `@nx/playwright`,
+  `@nx/rollup`,
+  `@nx/react`,
+  `@nx/storybook`,
+  `@nx/vue`,
+  `@nx/vite`,
+  `@nx/web`,
+  `@nx/webpack`,
+  `@nx/react-native`,
+  `@nx/expo`,
+] as const;
+
 /**
  * Sets up a new project in the temporary project path
  * for the currently selected CLI.
@@ -70,30 +95,7 @@ export function newProject({
       }
 
       // TODO(jack): we should tag the projects (e.g. tags: ['package']) and filter from that rather than hard-code packages.
-      const packages = [
-        `@nx/angular`,
-        `@nx/eslint-plugin`,
-        `@nx/express`,
-        `@nx/esbuild`,
-        `@nx/jest`,
-        `@nx/js`,
-        `@nx/eslint`,
-        `@nx/nest`,
-        `@nx/next`,
-        `@nx/node`,
-        `@nx/nuxt`,
-        `@nx/plugin`,
-        `@nx/playwright`,
-        `@nx/rollup`,
-        `@nx/react`,
-        `@nx/storybook`,
-        `@nx/vue`,
-        `@nx/vite`,
-        `@nx/web`,
-        `@nx/webpack`,
-        `@nx/react-native`,
-        `@nx/expo`,
-      ];
+      const packages = nxPackages;
       packageInstall(packages.join(` `), projScope);
 
       // stop the daemon

@@ -1,5 +1,4 @@
 import {
-  checkFilesDoNotExist,
   checkFilesExist,
   cleanupProject,
   createFile,
@@ -19,7 +18,7 @@ describe('Cypress E2E Test runner', () => {
   const myapp = uniq('myapp');
 
   beforeAll(() => {
-    newProject();
+    newProject({ unsetProjectNameAndRootFormat: false });
     ensureCypressInstallation();
   });
 
@@ -29,7 +28,7 @@ describe('Cypress E2E Test runner', () => {
     'should generate an app with the Cypress as e2e test runner',
     () => {
       runCLI(
-        `generate @nx/react:app ${myapp} --e2eTestRunner=cypress --linter=eslint`
+        `generate @nx/react:app ${myapp} --projectNameAndRootFormat as-provided --e2eTestRunner=cypress`
       );
 
       // Making sure the package.json file contains the Cypress dependency
@@ -37,14 +36,14 @@ describe('Cypress E2E Test runner', () => {
       expect(packageJson.devDependencies['cypress']).toBeTruthy();
 
       // Making sure the cypress folders & files are created
-      checkFilesExist(`apps/${myapp}-e2e/cypress.config.ts`);
-      checkFilesExist(`apps/${myapp}-e2e/tsconfig.json`);
+      checkFilesExist(`${myapp}-e2e/cypress.config.ts`);
+      checkFilesExist(`${myapp}-e2e/tsconfig.json`);
 
-      checkFilesExist(`apps/${myapp}-e2e/src/fixtures/example.json`);
-      checkFilesExist(`apps/${myapp}-e2e/src/e2e/app.cy.ts`);
-      checkFilesExist(`apps/${myapp}-e2e/src/support/app.po.ts`);
-      checkFilesExist(`apps/${myapp}-e2e/src/support/e2e.ts`);
-      checkFilesExist(`apps/${myapp}-e2e/src/support/commands.ts`);
+      checkFilesExist(`${myapp}-e2e/src/fixtures/example.json`);
+      checkFilesExist(`${myapp}-e2e/src/e2e/app.cy.ts`);
+      checkFilesExist(`${myapp}-e2e/src/support/app.po.ts`);
+      checkFilesExist(`${myapp}-e2e/src/support/e2e.ts`);
+      checkFilesExist(`${myapp}-e2e/src/support/commands.ts`);
     },
     TEN_MINS_MS
   );
@@ -54,14 +53,14 @@ describe('Cypress E2E Test runner', () => {
     async () => {
       // make sure env vars work
       createFile(
-        `apps/${myapp}-e2e/cypress.env.json`,
+        `${myapp}-e2e/cypress.env.json`,
         `
 {
   "cypressEnvJson": "i am from the cypress.env.json file"
 }`
       );
 
-      updateJson(`apps/${myapp}-e2e/project.json`, (json) => {
+      updateJson(`${myapp}-e2e/project.json`, (json) => {
         json.targets.e2e.options = {
           ...json.targets.e2e.options,
           env: {
@@ -71,7 +70,7 @@ describe('Cypress E2E Test runner', () => {
         return json;
       });
       createFile(
-        `apps/${myapp}-e2e/src/e2e/env.cy.ts`,
+        `${myapp}-e2e/src/e2e/env.cy.ts`,
         `
 describe('env vars', () => {
   it('should have cli args', () => {
@@ -103,7 +102,7 @@ describe('env vars', () => {
         await killPort(4200);
         // tests should not fail because of a config change
         updateFile(
-          `apps/${myapp}-e2e/cypress.config.ts`,
+          `${myapp}-e2e/cypress.config.ts`,
           `
 import { defineConfig } from 'cypress';
 import { nxE2EPreset } from '@nx/cypress/plugins/cypress-preset';
@@ -124,7 +123,7 @@ export default defineConfig({
 
         // make sure project.json env vars also work
         updateFile(
-          `apps/${myapp}-e2e/src/e2e/env.cy.ts`,
+          `${myapp}-e2e/src/e2e/env.cy.ts`,
           `
 describe('env vars', () => {
   it('should not have cli args', () => {
@@ -160,7 +159,7 @@ describe('env vars', () => {
     async () => {
       const ngAppName = uniq('ng-app');
       runCLI(
-        `generate @nx/angular:app ${ngAppName} --e2eTestRunner=cypress --linter=eslint --no-interactive`
+        `generate @nx/angular:app ${ngAppName} --projectNameAndRootFormat as-provided --e2eTestRunner=cypress --linter=eslint --no-interactive`
       );
 
       if (runE2ETests()) {
@@ -187,12 +186,12 @@ async function testCtAndE2eInProject(
 ) {
   let appName = uniq(`${projectType}-cy-app`);
   runCLI(
-    `generate @nx/${projectType}:app ${appName} --e2eTestRunner=none --no-interactive ${
+    `generate @nx/${projectType}:app ${appName} --projectNameAndRootFormat as-provided --e2eTestRunner=none --no-interactive ${
       projectType === 'angular' ? '--bundler=webpack' : ''
     }`
   );
   runCLI(
-    `generate @nx/${projectType}:component btn --project=${appName} --no-interactive`
+    `generate @nx/${projectType}:component ${appName}/src/btn --nameAndDirectoryFormat as-provided --no-interactive`
   );
 
   runCLI(
