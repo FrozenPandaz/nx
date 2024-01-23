@@ -9,7 +9,7 @@ import {
   workspaceRoot,
   writeJsonFile,
 } from '@nx/devkit';
-import { dirname, isAbsolute, join, relative } from 'path';
+import { dirname, isAbsolute, join, relative, resolve } from 'path';
 import { getNamedInputs } from '@nx/devkit/src/utils/get-named-inputs';
 import { existsSync, readdirSync } from 'fs';
 import { calculateHashForCreateNodes } from '@nx/devkit/src/utils/calculate-hash-for-create-nodes';
@@ -55,6 +55,7 @@ export const createNodes: CreateNodes<VitePluginOptions> = [
   '**/{vite,vitest}.config.{js,ts,mjs,mts,cjs,cts}',
   async (configFilePath, options, context) => {
     const projectRoot = dirname(configFilePath);
+    const absConfigPath = resolve(context.workspaceRoot, configFilePath);
     // Do not create a project if package.json and project.json isn't there.
     const siblingFiles = readdirSync(join(context.workspaceRoot, projectRoot));
     if (
@@ -71,7 +72,7 @@ export const createNodes: CreateNodes<VitePluginOptions> = [
     ]);
     const targets = targetsCache[hash]
       ? targetsCache[hash]
-      : await buildViteTargets(configFilePath, projectRoot, options, context);
+      : await buildViteTargets(absConfigPath, projectRoot, options, context);
 
     calculatedTargets[hash] = targets;
 
