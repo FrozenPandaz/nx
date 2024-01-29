@@ -29,6 +29,7 @@ export async function reactNativeApplicationGenerator(
   schema: Schema
 ): Promise<GeneratorCallback> {
   return await reactNativeApplicationGeneratorInternal(host, {
+    addPlugin: false,
     projectNameAndRootFormat: 'derived',
     ...schema,
   });
@@ -71,7 +72,8 @@ export async function reactNativeApplicationGeneratorInternal(
     options.projectName,
     options.appProjectRoot,
     options.js,
-    options.skipPackageJson
+    options.skipPackageJson,
+    options.addPlugin
   );
   tasks.push(jestTask);
 

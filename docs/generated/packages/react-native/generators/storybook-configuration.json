@@ -1,6 +1,6 @@
 {
   "name": "storybook-configuration",
-  "factory": "./src/generators/storybook-configuration/configuration#storybookConfigurationGenerator",
+  "factory": "./src/generators/storybook-configuration/configuration#storybookConfigurationGeneratorInternal",
   "schema": {
     "$schema": "https://json-schema.org/schema",
     "cli": "nx",

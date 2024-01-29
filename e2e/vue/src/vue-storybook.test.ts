@@ -14,6 +14,7 @@ describe('Storybook generators and executors for Vue projects', () => {
   beforeAll(async () => {
     proj = newProject({
       packages: ['@nx/vue', '@nx/storybook'],
+      unsetProjectNameAndRootFormat: false,
     });
     runCLI(
       `generate @nx/vue:app ${vueStorybookApp} --project-name-and-root-format=as-provided --no-interactive`
@@ -30,9 +31,8 @@ describe('Storybook generators and executors for Vue projects', () => {
 
   describe('build storybook', () => {
     it('should build a vue based storybook setup', () => {
-      // build
       runCLI(`run ${vueStorybookApp}:build-storybook --verbose`);
-      checkFilesExist(`dist/storybook/${vueStorybookApp}/index.html`);
+      checkFilesExist(`${vueStorybookApp}/storybook-static/index.html`);
     }, 300_000);
   });
 });
