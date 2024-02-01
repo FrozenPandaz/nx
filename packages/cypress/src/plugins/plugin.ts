@@ -58,7 +58,7 @@ export const createDependencies: CreateDependencies = () => {
 
 export const createNodes: CreateNodes<CypressPluginOptions> = [
   '**/cypress.config.{js,ts,mjs,cjs}',
-  (configFilePath, options, context) => {
+  async (configFilePath, options, context) => {
     options = normalizeOptions(options);
     const projectRoot = dirname(configFilePath);
 
@@ -77,7 +77,12 @@ export const createNodes: CreateNodes<CypressPluginOptions> = [
 
     const targets = targetsCache[hash]
       ? targetsCache[hash]
-      : buildCypressTargets(configFilePath, projectRoot, options, context);
+      : await buildCypressTargets(
+          configFilePath,
+          projectRoot,
+          options,
+          context
+        );
 
     calculatedTargets[hash] = targets;
 
@@ -140,13 +145,13 @@ function getOutputs(
   return outputs;
 }
 
-function buildCypressTargets(
+async function buildCypressTargets(
   configFilePath: string,
   projectRoot: string,
   options: CypressPluginOptions,
   context: CreateNodesContext
 ) {
-  const cypressConfig = getCypressConfig(configFilePath, context);
+  const cypressConfig = await getCypressConfig(configFilePath, context);
 
   const pluginPresetOptions = {
     ...cypressConfig.e2e?.[NX_PLUGIN_OPTIONS],
@@ -250,11 +255,18 @@ function buildCypressTargets(
   return targets;
 }
 
-function getCypressConfig(
+async function getCypressConfig(
   configFilePath: string,
   context: CreateNodesContext
-): any {
+): Promise<any> {
   const resolvedPath = join(context.workspaceRoot, configFilePath);
+  const tryDynamicImport = async (modulePath) => {
+    try {
+      return await Function(`return import("${modulePath}?t=${Date.now()}")`)();
+    } catch {
+      return require(modulePath);
+    }
+  };
 
   let module: any;
   if (extname(configFilePath) === '.ts') {
@@ -268,10 +280,10 @@ function getCypressConfig(
         unregisterTsProject();
       }
     } else {
-      module = load(resolvedPath);
+      module = await tryDynamicImport(resolvedPath);
     }
   } else {
-    module = load(resolvedPath);
+    module = await tryDynamicImport(resolvedPath);
   }
   return module.default ?? module;
 }
