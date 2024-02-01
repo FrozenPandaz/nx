@@ -371,21 +371,14 @@ describe('Angular Module Federation', () => {
     );
 
     // Build host and remote
-    const buildOutput = await runCommandUntil(`build ${host}`, (output) =>
-      output.includes('Successfully ran target build')
-    );
-    await killProcessAndPorts(buildOutput.pid);
-    const remoteOutput = await runCommandUntil(`build ${remote}`, (output) =>
-      output.includes('Successfully ran target build')
-    );
-    await killProcessAndPorts(remoteOutput.pid);
+    runCLI(`build ${host}`);
+    runCLI(`build ${remote}`);
 
     if (runE2ETests()) {
-      const hostE2eResults = await runCommandUntil(
-        `e2e ${host}-e2e --no-watch --verbose`,
-        (output) => output.includes('All specs passed!')
+      const childProcess = await runCommandUntil(`e2e ${host}-e2e`, (output) =>
+        output.includes('All specs passed!')
       );
-      await killProcessAndPorts(hostE2eResults.pid, hostPort, hostPort + 1);
+      await killProcessAndPorts(childProcess.pid, hostPort, hostPort + 1);
     }
   }, 500_000);
 
@@ -467,21 +460,14 @@ describe('Angular Module Federation', () => {
     );
 
     // Build host and remote
-    const buildOutput = await runCommandUntil(`build ${host}`, (output) =>
-      output.includes('Successfully ran target build')
-    );
-    await killProcessAndPorts(buildOutput.pid);
-    const remoteOutput = await runCommandUntil(`build ${remote}`, (output) =>
-      output.includes('Successfully ran target build')
-    );
-    await killProcessAndPorts(remoteOutput.pid);
+    runCLI(`build ${host}`);
+    runCLI(`build ${remote}`);
 
     if (runE2ETests()) {
-      const hostE2eResults = await runCommandUntil(
-        `e2e ${host}-e2e --no-watch --verbose`,
-        (output) => output.includes('All specs passed!')
+      const childProcess = await runCommandUntil(`e2e ${host}-e2e`, (output) =>
+        output.includes('All specs passed!')
       );
-      await killProcessAndPorts(hostE2eResults.pid, hostPort, hostPort + 1);
+      await killProcessAndPorts(childProcess.pid, hostPort, hostPort + 1);
     }
   }, 500_000);
 });

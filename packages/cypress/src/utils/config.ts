@@ -5,7 +5,10 @@ import type {
   PropertyAssignment,
   PropertySignature,
 } from 'typescript';
-import { NxCypressE2EPresetOptions } from '../../plugins/cypress-preset';
+import type { NxCypressE2EPresetOptions } from '../../plugins/cypress-preset';
+
+export const CYPRESS_CONFIG_FILE_NAME_PATTERN =
+  'cypress.config.{js,ts,mjs,cjs}';
 
 const TS_QUERY_EXPORT_CONFIG_PREFIX =
   ':matches(ExportAssignment, BinaryExpression:has(Identifier[name="module"]):has(Identifier[name="exports"]))';
