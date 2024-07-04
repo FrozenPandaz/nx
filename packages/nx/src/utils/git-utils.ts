@@ -1,5 +1,137 @@
-import { execSync } from 'child_process';
+import { exec, ExecOptions, execSync, ExecSyncOptions } from 'child_process';
 import { logger } from '../devkit-exports';
+
+function execAsync(command: string, execOptions: ExecOptions) {
+  return new Promise<string>((res, rej) => {
+    exec(command, execOptions, (err, stdout, stderr) => {
+      if (err) {
+        return rej(err);
+      }
+      res(stdout);
+    });
+  });
+}
+
+export function cloneFromUpstream(
+  url: string,
+  destination: string,
+  execOptions: ExecOptions
+) {
+  return execAsync(`git clone ${url} ${destination} --depth 1`, execOptions);
+}
+
+export class GitClient {
+  public root = this.getGitRootPath(this.directory);
+  constructor(private directory: string) {}
+
+  getGitRootPath(cwd: string) {
+    return execSync('git rev-parse --show-toplevel', {
+      cwd,
+    })
+      .toString()
+      .trim();
+  }
+
+  private execAsync(command: string) {
+    return execAsync(command, {
+      cwd: this.root,
+    });
+  }
+
+  async getGitFiles(path: string) {
+    return (await this.execAsync(`git ls-files ${path}`))
+      .trim()
+      .split('\n')
+      .map((s) => s.trim());
+  }
+
+  async deleteBranch(branch: string) {
+    return this.execAsync(`git branch -D ${branch}`);
+  }
+
+  async merge(ref: string, message: string) {
+    return this.execAsync(
+      `git merge ${ref} -X ours --allow-unrelated-histories -m "${message}"`
+    );
+  }
+  async fetch(remote: string) {
+    return this.execAsync(`git fetch ${remote}`);
+  }
+
+  async checkout(
+    branch: string,
+    opts: {
+      new: boolean;
+      base: string;
+    }
+  ) {
+    return this.execAsync(
+      `git checkout ${opts.new ? '-b ' : ' '}${branch}${
+        opts.base ? ' ' + opts.base : ''
+      }`
+    );
+  }
+
+  async move(path: string, destination: string) {
+    return this.execAsync(`git mv ${path} ${destination}`);
+  }
+
+  async push(ref: string) {
+    return this.execAsync(`git push -u -f origin ${ref}`);
+  }
+
+  async getGitRemotes(): Promise<
+    Array<{
+      name: string;
+      url: string;
+    }>
+  > {
+    const remotes = (await this.execAsync('git remote -v'))
+      .toString()
+      .split('\n')
+      .filter((line) => line.endsWith(' (fetch)'))
+      .map((s) => s.replace(' (fetch)', '').split('\t'))
+      .map(([name, url]) => ({
+        name,
+        url,
+      }));
+
+    return remotes;
+  }
+
+  async stageToGit(...paths: string[]) {
+    return this.execAsync(`git add ${paths.join(' ')}`);
+  }
+
+  async commit(message: string) {
+    return this.execAsync(`git commit -m "${message}"`);
+  }
+
+  async isIgnored(path: string) {
+    try {
+      await this.execAsync(`git check-ignore ${path}`);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  deleteGitRemote(name: string) {
+    return this.execAsync(`git remote rm ${name}`);
+  }
+
+  addGitRemote(name: string, url: string) {
+    return this.execAsync(`git remote add ${name} ${url}`);
+  }
+}
+
+export function fetchGitRemote(
+  name: string,
+  branch: string,
+  execOptions: ExecSyncOptions
+) {
+  return execSync(`git fetch ${name} ${branch} --depth 1`, execOptions);
+}
 
 export function getGithubSlugOrNull(): string | null {
   try {
