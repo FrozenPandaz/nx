@@ -16,6 +16,7 @@ export class ProcessTasks {
   private readonly seen = new Set<string>();
   readonly tasks: { [id: string]: Task } = {};
   readonly dependencies: { [k: string]: string[] } = {};
+  readonly infiniteDependencies: { [k: string]: string[] } = {};
   private readonly allTargetNames: string[];
 
   constructor(
@@ -96,8 +97,22 @@ export class ProcessTasks {
       }
     }
 
-    return Object.keys(this.dependencies).filter(
-      (d) => this.dependencies[d].length === 0
+    filterDummyTasks(this.infiniteDependencies);
+
+    for (const taskId of Object.keys(this.infiniteDependencies)) {
+      if (this.infiniteDependencies[taskId].length > 0) {
+        this.infiniteDependencies[taskId] = [
+          ...new Set(
+            this.infiniteDependencies[taskId].filter((d) => d !== taskId)
+          ).values(),
+        ];
+      }
+    }
+
+    return Object.keys(this.tasks).filter(
+      (d) =>
+        this.dependencies[d].length === 0 &&
+        this.infiniteDependencies[d].length === 0
     );
   }
 
@@ -205,7 +220,11 @@ export class ProcessTasks {
         resolvedConfiguration
       );
       if (task.id !== selfTaskId) {
-        this.dependencies[task.id].push(selfTaskId);
+        if (this.tasks[selfTaskId].infinite) {
+          this.infiniteDependencies[task.id].push(selfTaskId);
+        } else {
+          this.dependencies[task.id].push(selfTaskId);
+        }
       }
       if (!this.tasks[selfTaskId]) {
         const newTask = this.createTask(
@@ -266,7 +285,11 @@ export class ProcessTasks {
         );
 
         if (task.id !== depTargetId) {
-          this.dependencies[task.id].push(depTargetId);
+          if (this.tasks[depTargetId].infinite) {
+            this.infiniteDependencies[task.id].push(depTargetId);
+          } else {
+            this.dependencies[task.id].push(depTargetId);
+          }
         }
         if (!this.tasks[depTargetId]) {
           const newTask = this.createTask(
@@ -354,6 +377,7 @@ export class ProcessTasks {
       ),
       cache: project.data.targets[target].cache,
       parallelism: project.data.targets[target].parallelism ?? true,
+      infinite: project.data.targets[target].infinite ?? false,
     };
   }
 
@@ -405,6 +429,7 @@ export function createTaskGraph(
     roots,
     tasks: p.tasks,
     dependencies: p.dependencies,
+    infiniteDependencies: p.infiniteDependencies,
   };
 }
 

@@ -251,9 +251,12 @@ export class TasksSchedule {
     const hasDependenciesCompleted = this.taskGraph.dependencies[taskId].every(
       (id) => this.completedTasks.has(id)
     );
+    const hasInfiniteDependenciesStarted = this.taskGraph.infiniteDependencies[
+      taskId
+    ].every((id) => this.runningTasks.has(id));
 
     // if dependencies have not completed, cannot schedule
-    if (!hasDependenciesCompleted) {
+    if (!hasDependenciesCompleted || !hasInfiniteDependenciesStarted) {
       return false;
     }
 

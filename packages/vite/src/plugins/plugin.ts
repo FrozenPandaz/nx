@@ -351,6 +351,7 @@ async function buildTarget(
 function serveTarget(projectRoot: string, isUsingTsSolutionSetup: boolean) {
   const targetConfig: TargetConfiguration = {
     command: `vite`,
+    infinite: true,
     options: {
       cwd: joinPathFragments(projectRoot),
     },

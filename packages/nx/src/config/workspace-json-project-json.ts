@@ -256,6 +256,8 @@ export interface TargetConfiguration<T = any> {
    */
   parallelism?: boolean;
 
+  infinite?: boolean;
+
   /**
    * List of generators to run before the target to ensure the workspace
    * is up to date.

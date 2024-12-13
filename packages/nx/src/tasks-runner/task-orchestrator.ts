@@ -91,13 +91,19 @@ export class TaskOrchestrator {
 
     performance.mark('task-execution:start');
 
+    const threadCount =
+      this.options.parallel +
+      Object.values(this.taskGraph.tasks).filter((t) => t.infinite).length;
+
     const threads = [];
 
-    process.stdout.setMaxListeners(this.options.parallel + defaultMaxListeners);
-    process.stderr.setMaxListeners(this.options.parallel + defaultMaxListeners);
+    console.log(`Starting ${threadCount} threads to run tasks`);
+
+    process.stdout.setMaxListeners(threadCount + defaultMaxListeners);
+    process.stderr.setMaxListeners(threadCount + defaultMaxListeners);
 
     // initial seeding of the queue
-    for (let i = 0; i < this.options.parallel; ++i) {
+    for (let i = 0; i < threadCount; ++i) {
       threads.push(this.executeNextBatchOfTasksUsingTaskSchedule());
     }
     await Promise.all(threads);
