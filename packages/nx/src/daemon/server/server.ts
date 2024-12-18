@@ -109,6 +109,7 @@ import {
   isHandleFlushSyncGeneratorChangesToDiskMessage,
 } from '../message-types/flush-sync-generator-changes-to-disk';
 import { handleFlushSyncGeneratorChangesToDisk } from './handle-flush-sync-generator-changes-to-disk';
+import { readNxJson } from '../../config/nx-json';
 
 let performanceObserver: PerformanceObserver | undefined;
 let workspaceWatcherError: Error | undefined;
@@ -501,7 +502,9 @@ const handleOutputsChanges: FileWatcherCallback = async (err, changeEvents) => {
 };
 
 export async function startServer(): Promise<Server> {
-  setupWorkspaceContext(workspaceRoot);
+  const additionalProjectDirectories =
+    readNxJson(workspaceRoot).additionalProjectDirectories ?? [];
+  setupWorkspaceContext(workspaceRoot, additionalProjectDirectories);
 
   // Persist metadata about the background process so that it can be cleaned up later if needed
   await writeDaemonJsonProcessCache({

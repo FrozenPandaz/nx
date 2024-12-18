@@ -22,6 +22,7 @@ import { setupWorkspaceContext } from '../src/utils/workspace-context';
 import { daemonClient } from '../src/daemon/client/client';
 import { removeDbConnections } from '../src/utils/db-connection';
 import { signalToCode } from '../src/utils/exit-codes';
+import { readNxJson } from '../src/config/nx-json';
 
 function main() {
   if (
@@ -58,8 +59,10 @@ function main() {
     process.env.NX_DAEMON = 'false';
     require('nx/src/command-line/nx-commands').commandsObject.argv;
   } else {
+    const additionalProjectDirectories =
+      readNxJson(workspace.dir).additionalProjectDirectories ?? [];
     if (!daemonClient.enabled() && workspace !== null) {
-      setupWorkspaceContext(workspace.dir);
+      setupWorkspaceContext(workspace.dir, additionalProjectDirectories);
     }
 
     // polyfill rxjs observable to avoid issues with multiple version of Observable installed in node_modules

@@ -109,10 +109,15 @@ export async function retrieveProjectConfigurationsWithAngularProjects(
 
 export function retrieveProjectConfigurationPaths(
   root: string,
+  additionalProjectDirectories: string[],
   plugins: Array<LoadedNxPlugin>
 ): Promise<string[]> {
   const projectGlobPatterns = configurationGlobs(plugins);
-  return globWithWorkspaceContext(root, projectGlobPatterns);
+  return globWithWorkspaceContext(
+    root,
+    additionalProjectDirectories,
+    projectGlobPatterns
+  );
 }
 
 const projectsWithoutPluginCache = new Map<
@@ -126,8 +131,11 @@ export async function retrieveProjectConfigurationsWithoutPluginInference(
 ): Promise<Record<string, ProjectConfiguration>> {
   const nxJson = readNxJson(root);
   const plugins = await getOnlyDefaultPlugins(); // only load default plugins
+  const additionalProjectDirectories =
+    nxJson.additionalProjectDirectories ?? [];
   const projectGlobPatterns = await retrieveProjectConfigurationPaths(
     root,
+    additionalProjectDirectories,
     plugins
   );
   const cacheKey = root + ',' + projectGlobPatterns.join(',');
@@ -137,7 +145,11 @@ export async function retrieveProjectConfigurationsWithoutPluginInference(
   }
 
   const projectFiles =
-    (await globWithWorkspaceContext(root, projectGlobPatterns)) ?? [];
+    (await globWithWorkspaceContext(
+      root,
+      additionalProjectDirectories,
+      projectGlobPatterns
+    )) ?? [];
   const { projects } = await createProjectConfigurations(
     root,
     nxJson,

@@ -517,6 +517,11 @@ export interface NxJsonConfiguration<T = '*' | string[]> {
   sync?: NxSyncConfiguration;
 
   /**
+   * Additional directories to discover projects within relative to the nx.json
+   */
+  additionalProjectDirectories?: string[];
+
+  /**
    * Use the legacy file system cache instead of the db cache
    */
   useLegacyCache?: boolean;

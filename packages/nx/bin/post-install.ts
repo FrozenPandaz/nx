@@ -15,8 +15,11 @@ import { setupWorkspaceContext } from '../src/utils/workspace-context';
   const start = new Date();
   try {
     if (isMainNxPackage() && fileExists(join(workspaceRoot, 'nx.json'))) {
+      const nxJson = readNxJson(workspaceRoot);
+      const additionalProjectDirectories =
+        nxJson.additionalProjectDirectories ?? [];
       assertSupportedPlatform();
-      setupWorkspaceContext(workspaceRoot);
+      setupWorkspaceContext(workspaceRoot, additionalProjectDirectories);
       if (daemonClient.enabled()) {
         try {
           await daemonClient.stop();
@@ -25,7 +28,7 @@ import { setupWorkspaceContext } from '../src/utils/workspace-context';
       const tasks: Array<Promise<any>> = [
         buildProjectGraphAndSourceMapsWithoutDaemon(),
       ];
-      if (isNxCloudUsed(readNxJson())) {
+      if (isNxCloudUsed(nxJson)) {
         tasks.push(verifyOrUpdateNxCloudClient(getCloudOptions()));
       }
 
