@@ -1,31 +1,25 @@
-import { readFileSync, writeFileSync } from 'fs';
-import { ChildProcess, fork, Serializable } from 'child_process';
-import * as chalk from 'chalk';
+import { writeFileSync } from 'fs';
+import { fork, Serializable } from 'child_process';
 import { DefaultTasksRunnerOptions } from './default-tasks-runner';
 import { output } from '../utils/output';
 import { getCliPath, getPrintableCommandArgsForTask } from './utils';
 import { Batch } from './tasks-schedule';
 import { join } from 'path';
-import {
-  BatchMessage,
-  BatchMessageType,
-  BatchResults,
-} from './batch/batch-messages';
+import { BatchMessageType } from './batch/batch-messages';
 import { stripIndents } from '../utils/strip-indents';
 import { Task, TaskGraph } from '../config/task-graph';
-import { Transform } from 'stream';
 import {
-  PseudoTtyProcess,
   getPseudoTerminal,
   PseudoTerminal,
+  PseudoTtyProcess,
 } from './pseudo-terminal';
 import { signalToCode } from '../utils/exit-codes';
 import {
   NodeChildProcess,
   NodeChildProcessWithDirectOutput,
   NodeChildProcessWithNonDirectOutput,
-} from './node-child-process';
-import { BatchProcess } from './batch-process';
+} from './running-tasks/node-child-process';
+import { BatchProcess } from './running-tasks/batch-process';
 
 const forkScript = join(__dirname, './fork.js');
 
@@ -111,13 +105,13 @@ export class ForkedProcessTaskRunner {
     }
   ): Promise<NodeChildProcess> {
     return pipeOutput
-      ? await this.forkProcessWithPrefixAndNotTTY(task, {
+      ? this.forkProcessWithPrefixAndNotTTY(task, {
           temporaryOutputPath,
           streamOutput,
           taskGraph,
           env,
         })
-      : await this.forkProcessDirectOutputCapture(task, {
+      : this.forkProcessDirectOutputCapture(task, {
           temporaryOutputPath,
           streamOutput,
           taskGraph,

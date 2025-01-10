@@ -107,6 +107,13 @@ export default async function (
   success: boolean;
   terminalOutput: string;
 }> {
+  return await runCommands(options, context);
+}
+
+export async function runCommands(
+  options: RunCommandsOptions,
+  context: ExecutorContext
+) {
   registerProcessListener();
   const normalized = normalizeOptions(options);
 

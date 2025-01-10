@@ -2,9 +2,9 @@ import {
   BatchMessage,
   BatchMessageType,
   BatchResults,
-} from './batch/batch-messages';
+} from '../batch/batch-messages';
 import { ChildProcess, Serializable } from 'child_process';
-import { signalToCode } from '../utils/exit-codes';
+import { signalToCode } from '../../utils/exit-codes';
 
 export class BatchProcess {
   private results: BatchResults;

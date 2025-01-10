@@ -59,6 +59,7 @@ export class ProcessTasks {
           );
           this.tasks[task.id] = task;
           this.dependencies[task.id] = [];
+          this.infiniteDependencies[task.id] = [];
         }
       }
     }
@@ -83,6 +84,11 @@ export class ProcessTasks {
           (dd) => !!initialTasks[dd]
         );
       }
+      for (let d of Object.keys(this.infiniteDependencies)) {
+        this.infiniteDependencies[d] = this.infiniteDependencies[d].filter(
+          (dd) => !!initialTasks[dd]
+        );
+      }
     }
 
     filterDummyTasks(this.dependencies);
@@ -92,6 +98,13 @@ export class ProcessTasks {
         this.dependencies[taskId] = [
           ...new Set(
             this.dependencies[taskId].filter((d) => d !== taskId)
+          ).values(),
+        ];
+      }
+      if (this.infiniteDependencies[taskId].length > 0) {
+        this.infiniteDependencies[taskId] = [
+          ...new Set(
+            this.infiniteDependencies[taskId].filter((d) => d !== taskId)
           ).values(),
         ];
       }
@@ -219,13 +232,6 @@ export class ProcessTasks {
         dependencyConfig.target,
         resolvedConfiguration
       );
-      if (task.id !== selfTaskId) {
-        if (this.tasks[selfTaskId].infinite) {
-          this.infiniteDependencies[task.id].push(selfTaskId);
-        } else {
-          this.dependencies[task.id].push(selfTaskId);
-        }
-      }
       if (!this.tasks[selfTaskId]) {
         const newTask = this.createTask(
           selfTaskId,
@@ -236,12 +242,20 @@ export class ProcessTasks {
         );
         this.tasks[selfTaskId] = newTask;
         this.dependencies[selfTaskId] = [];
+        this.infiniteDependencies[selfTaskId] = [];
         this.processTask(
           newTask,
           newTask.target.project,
           configuration,
           overrides
         );
+      }
+      if (task.id !== selfTaskId) {
+        if (this.tasks[selfTaskId].infinite) {
+          this.infiniteDependencies[task.id].push(selfTaskId);
+        } else {
+          this.dependencies[task.id].push(selfTaskId);
+        }
       }
     }
   }

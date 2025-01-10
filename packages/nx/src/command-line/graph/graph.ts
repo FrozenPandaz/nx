@@ -980,6 +980,7 @@ function getAllTaskGraphsForWorkspace(projectGraph: ProjectGraph): {
         taskGraphs[taskId] = {
           tasks: {},
           dependencies: {},
+          infiniteDependencies: {},
           roots: [],
         };
 
@@ -1006,6 +1007,7 @@ function getAllTaskGraphsForWorkspace(projectGraph: ProjectGraph): {
             taskGraphs[taskId] = {
               tasks: {},
               dependencies: {},
+              infiniteDependencies: {},
               roots: [],
             };
 

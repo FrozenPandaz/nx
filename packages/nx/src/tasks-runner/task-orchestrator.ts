@@ -33,6 +33,8 @@ import { output } from '../utils/output';
 import { combineOptionsForExecutor } from '../utils/params';
 import { NxJsonConfiguration } from '../config/nx-json';
 import type { TaskDetails } from '../native';
+import { NoopChildProcess } from './running-tasks/noop-child-process';
+import { RunningTask } from './running-tasks/running-task';
 
 export class TaskOrchestrator {
   private taskDetails: TaskDetails | null = getTaskDetails();
@@ -64,6 +66,7 @@ export class TaskOrchestrator {
 
   private bailed = false;
 
+  private runningInfiniteTasks = new Map<string, RunningTask>();
   // endregion internal state
 
   constructor(
@@ -116,6 +119,8 @@ export class TaskOrchestrator {
     );
     this.cache.removeOldCacheRecords();
 
+    this.cleanup();
+
     return this.completedTasks;
   }
 
@@ -146,7 +151,13 @@ export class TaskOrchestrator {
       const groupId = this.closeGroup();
 
       if (task.infinite) {
-        await this.startInfiniteTask(task, groupId);
+        const childProcess = await this.startInfiniteTask(
+          task,
+          doNotSkipCache,
+          groupId
+        );
+
+        this.runningInfiniteTasks.set(task.id, childProcess);
       } else {
         await this.applyFromCacheOrRunTask(doNotSkipCache, task, groupId);
       }
@@ -407,110 +418,128 @@ export class TaskOrchestrator {
 
     // the task wasn't cached
     if (results.length === 0) {
-      let result: {
-        task: Task;
-        status: TaskStatus;
-        terminalOutput?: string;
-      };
-      const shouldPrefix =
-        streamOutput && process.env.NX_PREFIX_OUTPUT === 'true';
-      const targetConfiguration = getTargetConfigurationForTask(
+      const childProcess = await this.runTask(
         task,
-        this.projectGraph
+        streamOutput,
+        env,
+        temporaryOutputPath,
+        pipeOutput
       );
-      if (
-        process.env.NX_RUN_COMMANDS_DIRECTLY !== 'false' &&
-        targetConfiguration.executor === 'nx:run-commands' &&
-        !shouldPrefix
-      ) {
-        try {
-          const { schema } = getExecutorForTask(task, this.projectGraph);
-          const isRunOne = this.initiatingProject != null;
-          const combinedOptions = combineOptionsForExecutor(
-            task.overrides,
-            task.target.configuration ??
-              targetConfiguration.defaultConfiguration,
-            targetConfiguration,
-            schema,
-            task.target.project,
-            relative(task.projectRoot ?? workspaceRoot, process.cwd()),
-            process.env.NX_VERBOSE_LOGGING === 'true'
-          );
-          if (combinedOptions.env) {
-            env = {
-              ...env,
-              ...combinedOptions.env,
-            };
-          }
-          if (streamOutput) {
-            const args = getPrintableCommandArgsForTask(task);
-            output.logCommand(args.join(' '));
-          }
-          const { success, terminalOutput } = await runCommandsImpl(
-            {
-              ...combinedOptions,
-              env,
-              usePty: isRunOne && !this.tasksSchedule.hasTasks(),
-              streamOutput,
-            },
-            {
-              root: workspaceRoot, // only root is needed in runCommandsImpl
-            } as any
-          );
 
-          const status = success ? 'success' : 'failure';
-          if (!streamOutput) {
-            this.options.lifeCycle.printTaskTerminalOutput(
-              task,
-              status,
-              terminalOutput
-            );
-          }
-          writeFileSync(temporaryOutputPath, terminalOutput);
-          result = {
-            task,
-            status,
-            terminalOutput,
-          };
-        } catch (e) {
-          if (process.env.NX_VERBOSE_LOGGING === 'true') {
-            console.error(e);
-          } else {
-            console.error(e.message);
-          }
-          const terminalOutput = e.stack ?? e.message ?? '';
-          writeFileSync(temporaryOutputPath, terminalOutput);
-          result = {
-            task,
-            status: 'failure',
-            terminalOutput,
-          };
-        }
-      } else if (targetConfiguration.executor === 'nx:noop') {
-        writeFileSync(temporaryOutputPath, '');
-        result = {
-          task,
-          status: 'success',
-          terminalOutput: '',
-        };
-      } else {
-        // cache prep
-        const { code, terminalOutput } = await this.runTaskInForkedProcess(
-          task,
-          env,
-          pipeOutput,
-          temporaryOutputPath,
-          streamOutput
-        );
-        result = {
-          task,
-          status: code === 0 ? 'success' : 'failure',
-          terminalOutput,
-        };
-      }
-      results.push(result);
+      const { code, terminalOutput } = await childProcess.getResults();
+      results.push({
+        task,
+        status: code === 0 ? 'success' : 'failure',
+        terminalOutput,
+      });
     }
     await this.postRunSteps([task], results, doNotSkipCache, { groupId });
+  }
+
+  private async runTask(
+    task: Task,
+    streamOutput: boolean,
+    env: { [p: string]: string | undefined; TZ?: string },
+    temporaryOutputPath: string,
+    pipeOutput: boolean
+  ): Promise<RunningTask> {
+    const shouldPrefix =
+      streamOutput && process.env.NX_PREFIX_OUTPUT === 'true';
+    const targetConfiguration = getTargetConfigurationForTask(
+      task,
+      this.projectGraph
+    );
+    if (
+      process.env.NX_RUN_COMMANDS_DIRECTLY !== 'false' &&
+      targetConfiguration.executor === 'nx:run-commands' &&
+      !shouldPrefix
+    ) {
+      // todo implement this
+      return await this.runTaskInForkedProcess(
+        task,
+        env,
+        pipeOutput,
+        temporaryOutputPath,
+        streamOutput
+      );
+      // try {
+      //   const { schema } = getExecutorForTask(task, this.projectGraph);
+      //   const isRunOne = this.initiatingProject != null;
+      //   const combinedOptions = combineOptionsForExecutor(
+      //     task.overrides,
+      //     task.target.configuration ?? targetConfiguration.defaultConfiguration,
+      //     targetConfiguration,
+      //     schema,
+      //     task.target.project,
+      //     relative(task.projectRoot ?? workspaceRoot, process.cwd()),
+      //     process.env.NX_VERBOSE_LOGGING === 'true'
+      //   );
+      //   if (combinedOptions.env) {
+      //     env = {
+      //       ...env,
+      //       ...combinedOptions.env,
+      //     };
+      //   }
+      //   if (streamOutput) {
+      //     const args = getPrintableCommandArgsForTask(task);
+      //     output.logCommand(args.join(' '));
+      //   }
+      //   const { success, terminalOutput } = await runCommandsImpl(
+      //     {
+      //       ...combinedOptions,
+      //       env,
+      //       usePty: isRunOne && !this.tasksSchedule.hasTasks(),
+      //       streamOutput,
+      //     },
+      //     {
+      //       root: workspaceRoot, // only root is needed in runCommandsImpl
+      //     } as any
+      //   );
+      //
+      //   const status = success ? 'success' : 'failure';
+      //   if (!streamOutput) {
+      //     this.options.lifeCycle.printTaskTerminalOutput(
+      //       task,
+      //       status,
+      //       terminalOutput
+      //     );
+      //   }
+      //   writeFileSync(temporaryOutputPath, terminalOutput);
+      //   return {
+      //     task,
+      //     status,
+      //     terminalOutput,
+      //   };
+      // } catch (e) {
+      //   if (process.env.NX_VERBOSE_LOGGING === 'true') {
+      //     console.error(e);
+      //   } else {
+      //     console.error(e.message);
+      //   }
+      //   const terminalOutput = e.stack ?? e.message ?? '';
+      //   writeFileSync(temporaryOutputPath, terminalOutput);
+      //   return {
+      //     task,
+      //     status: 'failure',
+      //     terminalOutput,
+      //   };
+      // }
+    } else if (targetConfiguration.executor === 'nx:noop') {
+      writeFileSync(temporaryOutputPath, '');
+      return new NoopChildProcess({
+        code: 0,
+        terminalOutput: '',
+      });
+    } else {
+      // cache prep
+      return await this.runTaskInForkedProcess(
+        task,
+        env,
+        pipeOutput,
+        temporaryOutputPath,
+        streamOutput
+      );
+    }
   }
 
   private async runTaskInForkedProcess(
@@ -543,15 +572,15 @@ export class TaskOrchestrator {
             env,
           });
 
-      return childProcess.getResults();
+      return childProcess;
     } catch (e) {
       if (process.env.NX_VERBOSE_LOGGING === 'true') {
         console.error(e);
       }
-      return {
+      return new NoopChildProcess({
         code: 1,
         terminalOutput: undefined,
-      };
+      });
     }
   }
 
@@ -735,7 +764,71 @@ export class TaskOrchestrator {
   }
 
   // endregion utils
-  private async startInfiniteTask(task: Task, groupId: number) {
-    // this.forkedProcessTaskRunner.
+  private async startInfiniteTask(
+    task: Task,
+    doNotSkipCache: boolean,
+    groupId: number
+  ) {
+    const taskSpecificEnv = await this.processedTasks.get(task.id);
+    await this.preRunSteps([task], { groupId });
+
+    const pipeOutput = await this.pipeOutputCapture(task);
+    // obtain metadata
+    const temporaryOutputPath = this.cache.temporaryOutputPath(task);
+    const streamOutput =
+      this.outputStyle === 'static'
+        ? false
+        : shouldStreamOutput(task, this.initiatingProject);
+
+    let env = pipeOutput
+      ? getEnvVariablesForTask(
+          task,
+          taskSpecificEnv,
+          process.env.FORCE_COLOR === undefined
+            ? 'true'
+            : process.env.FORCE_COLOR,
+          this.options.skipNxCache,
+          this.options.captureStderr,
+          null,
+          null
+        )
+      : getEnvVariablesForTask(
+          task,
+          taskSpecificEnv,
+          undefined,
+          this.options.skipNxCache,
+          this.options.captureStderr,
+          temporaryOutputPath,
+          streamOutput
+        );
+    const childProcess = await this.runTask(
+      task,
+      streamOutput,
+      env,
+      temporaryOutputPath,
+      pipeOutput
+    );
+
+    childProcess.onExit((code) => {
+      console.error(
+        `Task "${task.id}" is infinite but exited with code ${code}`
+      );
+      this.cleanup();
+      process.exit(1);
+    });
+
+    await this.tasksSchedule.scheduleNextTasks();
+
+    // release blocked threads
+    this.waitingForTasks.forEach((f) => f(null));
+    this.waitingForTasks.length = 0;
+
+    return childProcess;
+  }
+
+  private cleanup() {
+    for (const [_, childProcess] of this.runningInfiniteTasks) {
+      childProcess.kill();
+    }
   }
 }

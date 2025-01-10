@@ -17,6 +17,30 @@ describe('PseudoTerminal', () => {
       done();
     });
   });
+
+  it('should run multiple commands2', async () => {
+    const term1 = getPseudoTerminal(true);
+    const term2 = getPseudoTerminal(true);
+
+    await term1.init();
+    await term2.init();
+    const childProcess = term1.runCommand('sleep 20');
+    const childProcess2 = term2.runCommand('sleep 20');
+    return Promise.all([
+      new Promise<void>((res) => {
+        childProcess.onExit((exitCode) => {
+          expect(exitCode).toEqual(0);
+          res();
+        });
+      }),
+      new Promise<void>((res) => {
+        childProcess2.onExit((exitCode) => {
+          expect(exitCode).toEqual(0);
+          res();
+        });
+      }),
+    ]);
+  });
   it('should kill a running command', (done) => {
     const childProcess = terminal.runCommand(
       'sleep 3 && echo "hello world" > file.txt'

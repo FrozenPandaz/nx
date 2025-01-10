@@ -494,7 +494,8 @@ function removeIdsFromTaskGraph<T>(
     dependencies: dependencies,
     infiniteDependencies,
     roots: Object.keys(filteredMapWithIds).filter(
-      (k) => dependencies[k].length === 0 && infiniteDependencies[k].length
+      (k) =>
+        dependencies[k].length === 0 && infiniteDependencies[k].length === 0
     ),
   };
 }

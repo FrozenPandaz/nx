@@ -47,6 +47,10 @@ export async function initTasksRunner(nxArgs: NxArgs) {
           acc[task.id] = [];
           return acc;
         }, {} as any),
+        infiniteDependencies: opts.tasks.reduce((acc, task) => {
+          acc[task.id] = [];
+          return acc;
+        }, {} as any),
       };
 
       const taskResults = await invokeTasksRunner({

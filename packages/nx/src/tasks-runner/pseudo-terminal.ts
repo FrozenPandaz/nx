@@ -138,7 +138,7 @@ export class PseudoTerminal {
 export class PseudoTtyProcess {
   isAlive = true;
 
-  private exitCallbacks = [];
+  private exitCallbacks: Array<(code: number) => void> = [];
 
   private exitCode: number;
   private terminalOutput = '';
@@ -158,7 +158,7 @@ export class PseudoTtyProcess {
         process.exit(this.exitCode);
       }
 
-      this.exitCallbacks.forEach((cb) => cb());
+      this.exitCallbacks.forEach((cb) => cb(this.exitCode));
     });
   }
 
@@ -170,7 +170,7 @@ export class PseudoTtyProcess {
     });
   }
 
-  onExit(callback: () => void): void {
+  onExit(callback: (code: number) => void): void {
     this.exitCallbacks.push(callback);
   }
 

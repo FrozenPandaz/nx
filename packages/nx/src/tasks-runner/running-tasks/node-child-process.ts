@@ -1,5 +1,5 @@
 import { ChildProcess, Serializable } from 'child_process';
-import { signalToCode } from '../utils/exit-codes';
+import { signalToCode } from '../../utils/exit-codes';
 import { Transform } from 'stream';
 import * as chalk from 'chalk';
 import { readFileSync } from 'fs';
@@ -7,7 +7,7 @@ import { readFileSync } from 'fs';
 export abstract class NodeChildProcess {
   abstract getResults(): Promise<{ code: number; terminalOutput: string }>;
 
-  abstract onExit(cb: () => void): void;
+  abstract onExit(cb: (code: number) => void): void;
 
   abstract send(message: Serializable): void;
 
@@ -18,7 +18,7 @@ export class NodeChildProcessWithNonDirectOutput implements NodeChildProcess {
   private terminalOutput: string;
   private exited = false;
   private exitCode: number;
-  private exitCallbacks: Array<() => void> = [];
+  private exitCallbacks: Array<(code: number) => void> = [];
 
   constructor(
     private childProcess: ChildProcess,
@@ -48,7 +48,7 @@ export class NodeChildProcessWithNonDirectOutput implements NodeChildProcess {
 
       this.onExit(() => {
         for (const cb of this.exitCallbacks) {
-          cb();
+          cb(this.exitCode);
         }
       });
     }
@@ -68,7 +68,7 @@ export class NodeChildProcessWithNonDirectOutput implements NodeChildProcess {
     });
   }
 
-  onExit(cb: () => void) {
+  onExit(cb: (code: number) => void) {
     this.exitCallbacks.push(cb);
   }
 
