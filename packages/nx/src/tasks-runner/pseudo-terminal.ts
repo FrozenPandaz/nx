@@ -138,19 +138,39 @@ export class PseudoTerminal {
 export class PseudoTtyProcess {
   isAlive = true;
 
-  exitCallbacks = [];
+  private exitCallbacks = [];
+
+  private exitCode: number;
+  private terminalOutput = '';
 
   constructor(private childProcess: ChildProcess) {
+    childProcess.onOutput((message) => {
+      this.terminalOutput += message;
+    });
+
     childProcess.onExit((message) => {
       this.isAlive = false;
 
-      const exitCode = messageToCode(message);
+      this.exitCode = messageToCode(message);
 
-      this.exitCallbacks.forEach((cb) => cb(exitCode));
+      // If the exit code is greater than 128, it's a special exit code for a signal
+      if (this.exitCode >= 128) {
+        process.exit(this.exitCode);
+      }
+
+      this.exitCallbacks.forEach((cb) => cb());
     });
   }
 
-  onExit(callback: (code: number) => void): void {
+  async getResults(): Promise<{ code: number; terminalOutput: string }> {
+    return new Promise((res) => {
+      this.onExit(() => {
+        res({ code: this.exitCode, terminalOutput: this.terminalOutput });
+      });
+    });
+  }
+
+  onExit(callback: () => void): void {
     this.exitCallbacks.push(callback);
   }
 
@@ -159,14 +179,16 @@ export class PseudoTtyProcess {
   }
 
   kill(): void {
-    try {
-      this.childProcess.kill();
-    } catch {
-      // when the child process completes before we explicitly call kill, this will throw
-      // do nothing
-    } finally {
-      if (this.isAlive == true) {
-        this.isAlive = false;
+    if (this.isAlive) {
+      try {
+        this.childProcess.kill();
+      } catch {
+        // when the child process completes before we explicitly call kill, this will throw
+        // do nothing
+      } finally {
+        if (this.isAlive == true) {
+          this.isAlive = false;
+        }
       }
     }
   }

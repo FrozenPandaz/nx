@@ -145,7 +145,11 @@ export class TaskOrchestrator {
     if (task) {
       const groupId = this.closeGroup();
 
-      await this.applyFromCacheOrRunTask(doNotSkipCache, task, groupId);
+      if (task.infinite) {
+        await this.startInfiniteTask(task, groupId);
+      } else {
+        await this.applyFromCacheOrRunTask(doNotSkipCache, task, groupId);
+      }
 
       this.openGroup(groupId);
 
@@ -403,6 +407,11 @@ export class TaskOrchestrator {
 
     // the task wasn't cached
     if (results.length === 0) {
+      let result: {
+        task: Task;
+        status: TaskStatus;
+        terminalOutput?: string;
+      };
       const shouldPrefix =
         streamOutput && process.env.NX_PREFIX_OUTPUT === 'true';
       const targetConfiguration = getTargetConfigurationForTask(
@@ -458,11 +467,11 @@ export class TaskOrchestrator {
             );
           }
           writeFileSync(temporaryOutputPath, terminalOutput);
-          results.push({
+          result = {
             task,
             status,
             terminalOutput,
-          });
+          };
         } catch (e) {
           if (process.env.NX_VERBOSE_LOGGING === 'true') {
             console.error(e);
@@ -471,19 +480,19 @@ export class TaskOrchestrator {
           }
           const terminalOutput = e.stack ?? e.message ?? '';
           writeFileSync(temporaryOutputPath, terminalOutput);
-          results.push({
+          result = {
             task,
             status: 'failure',
             terminalOutput,
-          });
+          };
         }
       } else if (targetConfiguration.executor === 'nx:noop') {
         writeFileSync(temporaryOutputPath, '');
-        results.push({
+        result = {
           task,
           status: 'success',
           terminalOutput: '',
-        });
+        };
       } else {
         // cache prep
         const { code, terminalOutput } = await this.runTaskInForkedProcess(
@@ -493,12 +502,13 @@ export class TaskOrchestrator {
           temporaryOutputPath,
           streamOutput
         );
-        results.push({
+        result = {
           task,
           status: code === 0 ? 'success' : 'failure',
           terminalOutput,
-        });
+        };
       }
+      results.push(result);
     }
     await this.postRunSteps([task], results, doNotSkipCache, { groupId });
   }
@@ -516,7 +526,7 @@ export class TaskOrchestrator {
       // Disable the pseudo terminal if this is a run-many
       const disablePseudoTerminal = !this.initiatingProject;
       // execution
-      const { code, terminalOutput } = usePtyFork
+      const childProcess = usePtyFork
         ? await this.forkedProcessTaskRunner.forkProcess(task, {
             temporaryOutputPath,
             streamOutput,
@@ -533,16 +543,14 @@ export class TaskOrchestrator {
             env,
           });
 
-      return {
-        code,
-        terminalOutput,
-      };
+      return childProcess.getResults();
     } catch (e) {
       if (process.env.NX_VERBOSE_LOGGING === 'true') {
         console.error(e);
       }
       return {
         code: 1,
+        terminalOutput: undefined,
       };
     }
   }
@@ -727,4 +735,7 @@ export class TaskOrchestrator {
   }
 
   // endregion utils
+  private async startInfiniteTask(task: Task, groupId: number) {
+    // this.forkedProcessTaskRunner.
+  }
 }
