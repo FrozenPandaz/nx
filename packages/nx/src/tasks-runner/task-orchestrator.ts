@@ -35,6 +35,7 @@ import { NxJsonConfiguration } from '../config/nx-json';
 import type { TaskDetails } from '../native';
 import { NoopChildProcess } from './running-tasks/noop-child-process';
 import { RunningTask } from './running-tasks/running-task';
+import { NxArgs } from '../utils/command-line-utils';
 
 export class TaskOrchestrator {
   private taskDetails: TaskDetails | null = getTaskDetails();
@@ -75,7 +76,7 @@ export class TaskOrchestrator {
     private readonly projectGraph: ProjectGraph,
     private readonly taskGraph: TaskGraph,
     private readonly nxJson: NxJsonConfiguration,
-    private readonly options: DefaultTasksRunnerOptions,
+    private readonly options: NxArgs & DefaultTasksRunnerOptions,
     private readonly bail: boolean,
     private readonly daemon: DaemonClient,
     private readonly outputStyle: string
@@ -816,12 +817,18 @@ export class TaskOrchestrator {
       this.cleanup();
       process.exit(1);
     });
-
-    await this.tasksSchedule.scheduleNextTasks();
-
-    // release blocked threads
-    this.waitingForTasks.forEach((f) => f(null));
-    this.waitingForTasks.length = 0;
+    if (
+      this.initiatingProject === task.target.project &&
+      this.options.targets.length === 1 &&
+      this.options.targets[0] === task.target.target
+    ) {
+      await childProcess.getResults();
+    } else {
+      await this.tasksSchedule.scheduleNextTasks();
+      // release blocked threads
+      this.waitingForTasks.forEach((f) => f(null));
+      this.waitingForTasks.length = 0;
+    }
 
     return childProcess;
   }
