@@ -15,11 +15,11 @@ import {
 } from './pseudo-terminal';
 import { signalToCode } from '../utils/exit-codes';
 import {
-  NodeChildProcess,
   NodeChildProcessWithDirectOutput,
   NodeChildProcessWithNonDirectOutput,
 } from './running-tasks/node-child-process';
 import { BatchProcess } from './running-tasks/batch-process';
+import { RunningTask } from './running-tasks/running-task';
 
 const forkScript = join(__dirname, './fork.js');
 
@@ -29,9 +29,7 @@ export class ForkedProcessTaskRunner {
   cliPath = getCliPath();
 
   private readonly verbose = process.env.NX_VERBOSE_LOGGING === 'true';
-  private processes = new Set<
-    NodeChildProcess | BatchProcess | PseudoTtyProcess
-  >();
+  private processes = new Set<RunningTask | BatchProcess>();
 
   private pseudoTerminal: PseudoTerminal | null = PseudoTerminal.isSupported()
     ? getPseudoTerminal()
@@ -103,7 +101,7 @@ export class ForkedProcessTaskRunner {
       taskGraph: TaskGraph;
       env: NodeJS.ProcessEnv;
     }
-  ): Promise<NodeChildProcess> {
+  ): Promise<RunningTask> {
     return pipeOutput
       ? this.forkProcessWithPrefixAndNotTTY(task, {
           temporaryOutputPath,
@@ -135,7 +133,7 @@ export class ForkedProcessTaskRunner {
       env: NodeJS.ProcessEnv;
       disablePseudoTerminal: boolean;
     }
-  ): Promise<NodeChildProcess | PseudoTtyProcess> {
+  ): Promise<RunningTask | PseudoTtyProcess> {
     const shouldPrefix =
       streamOutput && process.env.NX_PREFIX_OUTPUT === 'true';
 

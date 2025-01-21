@@ -1,7 +1,10 @@
-import { writeFileSync } from 'fs';
+import { Serializable } from 'child_process';
+import { RunningTask } from './running-task';
 
-export class NoopChildProcess {
+export class NoopChildProcess implements RunningTask {
   constructor(private results: { code: number; terminalOutput: string }) {}
+
+  send(): void {}
 
   async getResults(): Promise<{ code: number; terminalOutput: string }> {
     return this.results;

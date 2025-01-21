@@ -3,7 +3,7 @@ import { performance } from 'perf_hooks';
 import { relative } from 'path';
 import { writeFileSync } from 'fs';
 import { TaskHasher } from '../hasher/task-hasher';
-import runCommandsImpl from '../executors/run-commands/run-commands.impl';
+import { runCommands } from '../executors/run-commands/run-commands.impl';
 import { ForkedProcessTaskRunner } from './forked-process-task-runner';
 import { Cache, DbCache, getCache } from './cache';
 import { DefaultTasksRunnerOptions } from './default-tasks-runner';
@@ -456,75 +456,66 @@ export class TaskOrchestrator {
       !shouldPrefix
     ) {
       // todo implement this
-      return await this.runTaskInForkedProcess(
-        task,
-        env,
-        pipeOutput,
-        temporaryOutputPath,
-        streamOutput
-      );
-      // try {
-      //   const { schema } = getExecutorForTask(task, this.projectGraph);
-      //   const isRunOne = this.initiatingProject != null;
-      //   const combinedOptions = combineOptionsForExecutor(
-      //     task.overrides,
-      //     task.target.configuration ?? targetConfiguration.defaultConfiguration,
-      //     targetConfiguration,
-      //     schema,
-      //     task.target.project,
-      //     relative(task.projectRoot ?? workspaceRoot, process.cwd()),
-      //     process.env.NX_VERBOSE_LOGGING === 'true'
-      //   );
-      //   if (combinedOptions.env) {
-      //     env = {
-      //       ...env,
-      //       ...combinedOptions.env,
-      //     };
-      //   }
-      //   if (streamOutput) {
-      //     const args = getPrintableCommandArgsForTask(task);
-      //     output.logCommand(args.join(' '));
-      //   }
-      //   const { success, terminalOutput } = await runCommandsImpl(
-      //     {
-      //       ...combinedOptions,
-      //       env,
-      //       usePty: isRunOne && !this.tasksSchedule.hasTasks(),
-      //       streamOutput,
-      //     },
-      //     {
-      //       root: workspaceRoot, // only root is needed in runCommandsImpl
-      //     } as any
-      //   );
-      //
-      //   const status = success ? 'success' : 'failure';
-      //   if (!streamOutput) {
-      //     this.options.lifeCycle.printTaskTerminalOutput(
-      //       task,
-      //       status,
-      //       terminalOutput
-      //     );
-      //   }
-      //   writeFileSync(temporaryOutputPath, terminalOutput);
-      //   return {
-      //     task,
-      //     status,
-      //     terminalOutput,
-      //   };
-      // } catch (e) {
-      //   if (process.env.NX_VERBOSE_LOGGING === 'true') {
-      //     console.error(e);
-      //   } else {
-      //     console.error(e.message);
-      //   }
-      //   const terminalOutput = e.stack ?? e.message ?? '';
-      //   writeFileSync(temporaryOutputPath, terminalOutput);
-      //   return {
-      //     task,
-      //     status: 'failure',
-      //     terminalOutput,
-      //   };
-      // }
+      // return await this.runTaskInForkedProcess(
+      //   task,
+      //   env,
+      //   pipeOutput,
+      //   temporaryOutputPath,
+      //   streamOutput
+      // );
+      try {
+        const { schema } = getExecutorForTask(task, this.projectGraph);
+        const isRunOne = this.initiatingProject != null;
+        const combinedOptions = combineOptionsForExecutor(
+          task.overrides,
+          task.target.configuration ?? targetConfiguration.defaultConfiguration,
+          targetConfiguration,
+          schema,
+          task.target.project,
+          relative(task.projectRoot ?? workspaceRoot, process.cwd()),
+          process.env.NX_VERBOSE_LOGGING === 'true'
+        );
+        if (combinedOptions.env) {
+          env = {
+            ...env,
+            ...combinedOptions.env,
+          };
+        }
+        if (streamOutput) {
+          const args = getPrintableCommandArgsForTask(task);
+          output.logCommand(args.join(' '));
+        }
+        const runningTask = await runCommands(
+          {
+            ...combinedOptions,
+            env,
+            usePty: isRunOne && !this.tasksSchedule.hasTasks(),
+            streamOutput,
+          },
+          {
+            root: workspaceRoot, // only root is needed in runCommands
+          } as any
+        );
+
+        runningTask.onExit((code, terminalOutput) => {
+          if (!streamOutput) {
+            this.options.lifeCycle.printTaskTerminalOutput(
+              task,
+              code === 0 ? 'success' : 'failure',
+              terminalOutput
+            );
+            writeFileSync(temporaryOutputPath, terminalOutput);
+          }
+        });
+      } catch (e) {
+        if (process.env.NX_VERBOSE_LOGGING === 'true') {
+          console.error(e);
+        } else {
+          console.error(e.message);
+        }
+        const terminalOutput = e.stack ?? e.message ?? '';
+        writeFileSync(temporaryOutputPath, terminalOutput);
+      }
     } else if (targetConfiguration.executor === 'nx:noop') {
       writeFileSync(temporaryOutputPath, '');
       return new NoopChildProcess({

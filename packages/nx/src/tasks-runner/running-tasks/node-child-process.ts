@@ -1,20 +1,11 @@
 import { ChildProcess, Serializable } from 'child_process';
 import { signalToCode } from '../../utils/exit-codes';
+import { RunningTask } from './running-task';
 import { Transform } from 'stream';
 import * as chalk from 'chalk';
 import { readFileSync } from 'fs';
 
-export abstract class NodeChildProcess {
-  abstract getResults(): Promise<{ code: number; terminalOutput: string }>;
-
-  abstract onExit(cb: (code: number) => void): void;
-
-  abstract send(message: Serializable): void;
-
-  abstract kill(signal?: NodeJS.Signals | number): void;
-}
-
-export class NodeChildProcessWithNonDirectOutput implements NodeChildProcess {
+export class NodeChildProcessWithNonDirectOutput implements RunningTask {
   private terminalOutput: string;
   private exited = false;
   private exitCode: number;
@@ -177,7 +168,7 @@ function logClearLineToPrefixTransformer(prefix: string) {
   });
 }
 
-export class NodeChildProcessWithDirectOutput implements NodeChildProcess {
+export class NodeChildProcessWithDirectOutput implements RunningTask {
   private terminalOutput = '';
   private exitCallbacks: Array<(code: number, signal: string) => void> = [];
 

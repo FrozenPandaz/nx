@@ -1,8 +1,7 @@
-import { PseudoTtyProcess } from '../pseudo-terminal';
-import { NodeChildProcess } from './node-child-process';
-import { NoopChildProcess } from './noop-child-process';
+export abstract class RunningTask {
+  abstract getResults(): Promise<{ code: number; terminalOutput: string }>;
 
-export type RunningTask =
-  | NodeChildProcess
-  | PseudoTtyProcess
-  | NoopChildProcess;
+  abstract onExit(cb: (code: number) => void): void;
+
+  abstract kill(signal?: NodeJS.Signals | number): void;
+}
