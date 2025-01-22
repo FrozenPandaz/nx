@@ -7,7 +7,6 @@ import {
 } from '../../tasks-runner/pseudo-terminal';
 import { signalToCode } from '../../utils/exit-codes';
 import { ParallelRunningTasks, SeriallyRunningTasks } from './running-tasks';
-import { RunningTask } from '../../tasks-runner/running-tasks/running-task';
 
 export const LARGE_BUFFER = 1024 * 1000000;
 export type Json = {
@@ -324,7 +323,7 @@ function filterPropKeysFromUnParsedOptions(
 let registered = false;
 
 function registerProcessListener(
-  runningTask: RunningTask,
+  runningTask: ParallelRunningTasks | SeriallyRunningTasks,
   pseudoTerminal?: PseudoTerminal
 ) {
   if (registered) {
