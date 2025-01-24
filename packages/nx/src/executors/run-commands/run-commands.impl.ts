@@ -126,7 +126,7 @@ export async function runCommands(
   try {
     const runningTask = options.parallel
       ? new ParallelRunningTasks(normalized, context)
-      : new SeriallyRunningTasks(normalized, context, this.pseudoTerminal);
+      : new SeriallyRunningTasks(normalized, context, pseudoTerminal);
 
     registerProcessListener(runningTask, pseudoTerminal);
     return runningTask;

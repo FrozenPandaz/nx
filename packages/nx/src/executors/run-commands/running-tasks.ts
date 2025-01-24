@@ -16,6 +16,8 @@ import {
   loadAndExpandDotEnvFile,
   unloadDotEnvFile,
 } from '../../tasks-runner/task-env';
+import * as treeKill from 'tree-kill';
+import { promisify } from 'util';
 
 export class ParallelRunningTasks implements RunningTask {
   private readonly childProcesses: RunningNodeProcess[];
@@ -60,10 +62,8 @@ export class ParallelRunningTasks implements RunningTask {
     }
   }
 
-  kill(signal?: NodeJS.Signals | number): void {
-    for (const childProcess of this.childProcesses) {
-      childProcess.kill(signal);
-    }
+  async kill(signal?: NodeJS.Signals | number) {
+    await Promise.all(this.childProcesses.map((p) => p.kill(signal)));
   }
 
   private async run() {
@@ -173,8 +173,8 @@ export class SeriallyRunningTasks implements RunningTask {
     throw new Error('Not implemented');
   }
 
-  kill(signal?: NodeJS.Signals | number): void {
-    this.currentProcess.kill(signal);
+  kill(signal?: NodeJS.Signals | number) {
+    return this.currentProcess.kill(signal);
   }
 
   private async run(
@@ -320,8 +320,16 @@ class RunningNodeProcess implements RunningTask {
     this.childProcess.send(message);
   }
 
-  kill(signal?: NodeJS.Signals | number): void {
-    this.childProcess.kill(signal);
+  kill(signal?: NodeJS.Signals | number): Promise<void> {
+    return new Promise<void>((res, rej) => {
+      treeKill(this.childProcess.pid, signal, (err) => {
+        if (err) {
+          rej(err);
+        } else {
+          res();
+        }
+      });
+    });
   }
 
   private addListeners(

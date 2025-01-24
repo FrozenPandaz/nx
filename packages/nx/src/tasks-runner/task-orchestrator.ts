@@ -36,6 +36,7 @@ import type { TaskDetails } from '../native';
 import { NoopChildProcess } from './running-tasks/noop-child-process';
 import { RunningTask } from './running-tasks/running-task';
 import { NxArgs } from '../utils/command-line-utils';
+import * as treeKill from 'tree-kill';
 
 export class TaskOrchestrator {
   private taskDetails: TaskDetails | null = getTaskDetails();
@@ -120,7 +121,7 @@ export class TaskOrchestrator {
     );
     this.cache.removeOldCacheRecords();
 
-    this.cleanup();
+    await this.cleanup();
 
     return this.completedTasks;
   }
@@ -489,7 +490,10 @@ export class TaskOrchestrator {
           {
             ...combinedOptions,
             env,
-            usePty: isRunOne && !this.tasksSchedule.hasTasks(),
+            usePty:
+              isRunOne &&
+              !this.tasksSchedule.hasTasks() &&
+              this.runningInfiniteTasks.size === 0,
             streamOutput,
           },
           {
@@ -507,6 +511,8 @@ export class TaskOrchestrator {
             writeFileSync(temporaryOutputPath, terminalOutput);
           }
         });
+
+        return runningTask;
       } catch (e) {
         if (process.env.NX_VERBOSE_LOGGING === 'true') {
           console.error(e);
@@ -805,8 +811,9 @@ export class TaskOrchestrator {
       console.error(
         `Task "${task.id}" is infinite but exited with code ${code}`
       );
-      this.cleanup();
-      process.exit(1);
+      this.cleanup().then(() => {
+        process.exit(1);
+      });
     });
     if (
       this.initiatingProject === task.target.project &&
@@ -824,9 +831,9 @@ export class TaskOrchestrator {
     return childProcess;
   }
 
-  private cleanup() {
-    for (const [_, childProcess] of this.runningInfiniteTasks) {
-      childProcess.kill();
-    }
+  private async cleanup() {
+    await Promise.all(
+      Array.from(this.runningInfiniteTasks).map(([_, t]) => t.kill('SIGTERM'))
+    );
   }
 }
