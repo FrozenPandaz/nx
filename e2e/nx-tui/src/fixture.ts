@@ -346,7 +346,7 @@ export const test = base.extend<{
                   }
 
                   // Find all matches in the full row text
-                  let match;
+                  let match: RegExpExecArray | null;
                   while ((match = regex.exec(rowData.text)) !== null) {
                     const matchStart = match.index;
                     const matchEnd = matchStart + match[0].length - 1;
