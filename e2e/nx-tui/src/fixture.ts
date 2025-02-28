@@ -341,7 +341,9 @@ export const test = base.extend<{
                     regex = new RegExp(escaped, 'g');
                   }
 
-                  if (!regex) return;
+                  if (!regex) {
+                    return;
+                  }
 
                   // Find all matches in the full row text
                   let match;
