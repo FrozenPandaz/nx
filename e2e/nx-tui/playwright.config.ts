@@ -32,7 +32,7 @@ export default defineConfig({
   // Store snapshots next to test files
   snapshotPathTemplate: '{testDir}/{testFileDir}/__snapshots__/{arg}{ext}',
   expect: {
-    toMatchSnapshot: {
+    toHaveScreenshot: {
       // Allow for some noise in the screenshots to account for differences between local and CI.
       maxDiffPixelRatio: 0.02,
     },
