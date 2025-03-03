@@ -1,12 +1,14 @@
-use crossbeam_channel::Sender;
+use crate::native::pseudo_terminal::pseudo_terminal::PseudoTerminal;
 use crossbeam_channel::{bounded, Receiver};
+use crossbeam_channel::{Sender, TryRecvError};
 use napi::{
   threadsafe_function::{
     ErrorStrategy::Fatal, ThreadsafeFunction, ThreadsafeFunctionCallMode::NonBlocking,
   },
   Env, JsFunction,
 };
-use portable_pty::ChildKiller;
+use portable_pty::{ChildKiller, ExitStatus};
+use std::sync::{Arc, RwLock};
 use tracing::warn;
 
 pub enum ChildProcessMessage {
@@ -17,7 +19,7 @@ pub enum ChildProcessMessage {
 pub struct ChildProcess {
     process_killer: Box<dyn ChildKiller + Sync + Send>,
     message_receiver: Receiver<String>,
-    pub(crate) wait_receiver: Receiver<String>,
+    exit_receiver: Receiver<ExitStatus>,
     thread_handles: Vec<Sender<()>>,
 }
 #[napi]
@@ -25,12 +27,12 @@ impl ChildProcess {
     pub fn new(
         process_killer: Box<dyn ChildKiller + Sync + Send>,
         message_receiver: Receiver<String>,
-        exit_receiver: Receiver<String>,
+        exit_receiver: Receiver<ExitStatus>,
     ) -> Self {
         Self {
             process_killer,
             message_receiver,
-            wait_receiver: exit_receiver,
+            exit_receiver,
             thread_handles: vec![],
         }
     }
@@ -42,21 +44,25 @@ impl ChildProcess {
 
     #[napi]
     pub fn on_exit(
-        &mut self,
+        &self,
         #[napi(ts_arg_type = "(message: string) => void")] callback: JsFunction,
     ) -> napi::Result<()> {
-        let wait = self.wait_receiver.clone();
+        let wait = self.exit_receiver.clone();
         let callback_tsfn: ThreadsafeFunction<String, Fatal> =
             callback.create_threadsafe_function(0, |ctx| Ok(vec![ctx.value]))?;
 
         std::thread::spawn(move || {
             // we will only get one exit_code here, so we dont need to do a while loop
-            if let Ok(exit_code) = wait.recv() {
-                callback_tsfn.call(exit_code, NonBlocking);
+            if let Ok(exit_status) = wait.recv() {
+                callback_tsfn.call(exit_status.to_string(), NonBlocking);
             }
         });
 
         Ok(())
+    }
+
+    pub fn get_exit_status(&self) -> Result<ExitStatus, TryRecvError> {
+        self.exit_receiver.try_recv()
     }
 
     #[napi]

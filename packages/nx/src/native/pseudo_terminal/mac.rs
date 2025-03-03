@@ -1,10 +1,8 @@
-use std::collections::HashMap;
-
 use tracing::trace;
 
 use super::child_process::ChildProcess;
 use super::os;
-use super::pseudo_terminal::{create_pseudo_terminal, run_command};
+use super::pseudo_terminal::PseudoTerminal;
 use crate::native::logger::enable_logger;
 
 #[napi]
@@ -28,16 +26,8 @@ impl RustPseudoTerminal {
         quiet: Option<bool>,
         tty: Option<bool>,
     ) -> napi::Result<ChildProcess> {
-        let pseudo_terminal = create_pseudo_terminal()?;
-        run_command(
-            &pseudo_terminal,
-            command,
-            command_dir,
-            js_env,
-            exec_argv,
-            quiet,
-            tty,
-        )
+        let pseudo_terminal = PseudoTerminal::default()?;
+        pseudo_terminal.run_command(command, command_dir, js_env, exec_argv, quiet, tty)
     }
 
     /// This allows us to run a pseudoterminal with a fake node ipc channel
