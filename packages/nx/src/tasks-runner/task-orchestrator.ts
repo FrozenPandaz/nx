@@ -480,14 +480,11 @@ export class TaskOrchestrator {
           ...combinedOptions,
           env,
           usePty:
-            !this.tasksSchedule.hasTasks() &&
-            this.runningContinuousTasks.size === 0,
+            TUI_ENABLED ||
+            (!this.tasksSchedule.hasTasks() &&
+              this.runningContinuousTasks.size === 0),
           streamOutput,
         };
-        if (TUI_ENABLED) {
-          // Preprocess options on the JS side before sending to Rust
-          runCommandsOptions = normalizeOptions(runCommandsOptions);
-        }
 
         const runningTask = await runCommands(runCommandsOptions, {
           root: workspaceRoot, // only root is needed in runCommands

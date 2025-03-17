@@ -174,7 +174,7 @@ pub struct TasksList {
 impl TasksList {
     /// Creates a new TasksList with the given tasks.
     /// Converts the input tasks into TaskItems and initializes the UI state.
-    pub fn new(tasks: Vec<Task>, target_names: Vec<String>) -> Self {
+    pub fn new(tasks: Vec<Task>, target_names: Vec<String>, pinned_tasks: Vec<String>) -> Self {
         let mut task_items = Vec::new();
 
         for task in tasks {
@@ -183,6 +183,9 @@ impl TasksList {
 
         let filtered_names = Vec::new();
         let selection_manager = TaskSelectionManager::new(5); // Default 5 items per page
+
+        let mut iter = pinned_tasks.into_iter().take(2);
+        let pane_tasks = [iter.next(), iter.next()];
 
         Self {
             pty_instances: HashMap::new(),
@@ -194,7 +197,7 @@ impl TasksList {
             filter_text: String::new(),
             filter_persisted: false,
             focus: Focus::TaskList,
-            pane_tasks: [None, None],
+            pane_tasks,
             focused_pane: None,
             is_dimmed: false,
             spacebar_mode: false,
@@ -437,6 +440,12 @@ impl TasksList {
         self.focused_pane = None;
         self.focus = Focus::TaskList;
         self.spacebar_mode = false;
+    }
+
+    pub fn pin_tasks(&mut self, task_ids: Vec<String>) {
+        for (pane_idx, task_id) in task_ids.into_iter().enumerate() {
+            self.pane_tasks[pane_idx] = Some(task_id);
+        }
     }
 
     pub fn assign_current_task_to_pane(&mut self, pane_idx: usize) {
