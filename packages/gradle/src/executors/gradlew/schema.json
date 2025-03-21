@@ -4,6 +4,19 @@
   "title": "GradlewImpl executor",
   "description": "The GradlewImpl executor is used to run Gradle tasks.",
   "type": "object",
-  "properties": {},
-  "required": []
+  "properties": {
+    "taskNames": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "args": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": ["taskNames"]
 }

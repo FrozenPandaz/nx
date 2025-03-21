@@ -52,7 +52,7 @@ fun processTask(
   }
 
   val gradlewCommand = getGradlewCommand()
-  target["command"] = "$gradlewCommand ${projectBuildPath}:${task.name}"
+  target["executor"] = "@nx/gradle:gradlew"
 
   val metadata = getMetadata(task.description ?: "Run ${task.name}", projectBuildPath, task.name)
   target["metadata"] = metadata
@@ -61,7 +61,7 @@ fun processTask(
   if (cwd.startsWith(workspaceRoot)) {
     cwd = cwd.replace(workspaceRoot, ".")
   }
-  target["options"] = mapOf("cwd" to cwd)
+  target["options"] = mapOf("cwd" to cwd, "taskName" to "${projectBuildPath}:${task.name}")
 
   return target
 }
