@@ -61,7 +61,7 @@ fun processTask(
   if (cwd.startsWith(workspaceRoot)) {
     cwd = cwd.replace(workspaceRoot, ".")
   }
-  target["options"] = mapOf("cwd" to cwd, "taskName" to "${projectBuildPath}:${task.name}")
+  target["options"] = mapOf("cwd" to cwd, "taskNames" to listOf("${projectBuildPath}:${task.name}"))
 
   return target
 }

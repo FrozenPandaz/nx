@@ -24,6 +24,7 @@ dependencies {
     implementation("org.gradle:gradle-tooling-api:$toolingApiVersion")
     runtimeOnly("org.slf4j:slf4j-simple:1.7.10")
     implementation("com.google.code.gson:gson:2.10.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
