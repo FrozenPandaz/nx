@@ -27,13 +27,24 @@ can [submit a Pull Request](https://github.com/nrwl/nx/blob/master/CONTRIBUTING.
 
 Source code and documentation are included in the top-level folders listed below.
 
-- `docs` - Markdown and configuration files for documentation including tutorials, guides for each supported platform,
-  and API docs.
-- `e2e` - E2E tests.
 - `packages` - Source code for Nx packages such as Angular, React, Web, NestJS, Next and others including generators and
   executors (or builders).
+- `e2e` - E2E tests for the Nx packages
+- `graph` - Source code for the Nx Graph application which shows the project graph, task graph, project details, and more in the browser.
+- `docs` - Markdown and configuration files for documentation including tutorials, guides for each supported platform,
+  and API docs.
+- `nx-dev` - Source code for the Nx documentation site which displays the markdown in `docs` and more.
+- `tools` - Workspace-specific tooling and plugins
 - `scripts` - Miscellaneous scripts for project tasks such as building documentation, testing, and code formatting.
 - `tmp` - Folder used by e2e tests. If you are a WebStorm user, make sure to mark this folder as excluded.
+
+## Technologies
+
+This repo contains a mix of different technologies, including:
+
+- **Rust**: The core of Nx is written in Rust, which provides performance and safety.
+- **TypeScript**: The primary language for Nx packages and the Nx DevKit.
+- **Kotlin**: Used for the Gradle and Java plugins.
 
 ## Development Workstation Setup
 
