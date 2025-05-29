@@ -15,7 +15,7 @@ import {
 export const yargsAffectedCommand: CommandModule = {
   command: 'affected',
   describe:
-    'Run target for affected projects. See https://nx.dev/ci/features/affected for more details.',
+    'Run target for affected projects. "Affected projects" are those that have been changed in the current branch/PR, or that depend on a project that has been changed. See https://nx.dev/using-nx/affected for more details.',
   builder: (yargs) =>
     linkToNxDevAndExamples(
       withAffectedOptions(
