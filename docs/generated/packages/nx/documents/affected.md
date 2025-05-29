@@ -1,11 +1,11 @@
 ---
-title: 'affected - CLI command'
-description: 'Run target for affected projects. See https://nx.dev/ci/features/affected for more details.'
+title: "affected - CLI command"
+description: "Run target for affected projects. "Affected projects" are those that have been changed in the current branch/PR, or that depend on a project that has been changed. See https://nx.dev/using-nx/affected for more details."
 ---
 
 # affected
 
-Run target for affected projects. See [https://nx.dev/ci/features/affected](/ci/features/affected) for more details.
+Run target for affected projects. "Affected projects" are those that have been changed in the current branch/PR, or that depend on a project that has been changed. See [https://nx.dev/using-nx/affected](/using-nx/affected) for more details.
 
 ## Usage
 
