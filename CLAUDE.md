@@ -9,21 +9,62 @@ For specific types of queries:
 
 - If asked about the purpose or features of Nx, refer to the "Repository Purpose" section.
 - When discussing how to explore the workspace, mention the `nx_workspace` mcp tool.
-- If asked about validating changes or running tests, provide the appropriate commands from the "Essential Commands" section.
-- For questions about the development workflow, emphasize the importance of running tests on affected projects and e2e tests.
+- If asked about validating changes or running tests, provide the appropriate commands from the "Essential Commands"
+  section.
+- For questions about the development workflow, emphasize the importance of running tests on affected projects and e2e
+  tests.
 
 Remember to:
 
-- Highlight Nx's focus on monorepos and its key features like smart task execution, code generation, and project graph analysis.
+- Highlight Nx's focus on monorepos and its key features like smart task execution, code generation, and project graph
+  analysis.
 - Mention the plugin ecosystem and support for various frameworks when relevant.
 - Emphasize the importance of running the full validation suite before committing changes.
 - Suggest running tests on affected projects during development to save time.
 
-Always strive to provide accurate, helpful responses that align with the best practices and workflows described in this file. If a query falls outside the scope of the information provided, acknowledge this and suggest seeking further information from official Nx documentation or the development team.
+Always strive to provide accurate, helpful responses that align with the best practices and workflows described in this
+file. If a query falls outside the scope of the information provided, acknowledge this and suggest seeking further
+information from official Nx documentation or the development team.
+
+## GitHub Issue Response Mode
+
+When responding to GitHub issues, determine your approach based on how the request is phrased:
+
+### Plan-First Mode (Default)
+
+Use this approach when users ask you to:
+
+- "analyze", "investigate", "assess", "review", "examine", or "plan"
+- Or when the request is ambiguous
+
+In this mode:
+
+1. Provide a detailed analysis of the issue
+2. Create a comprehensive implementation plan
+3. Break down the solution into clear steps
+4. Then please post the plan as a comment on the issue
+
+### Immediate Implementation Mode
+
+Use this approach when users ask you to:
+
+- "fix", "implement", "solve", "build", "create", "update", or "add"
+- Or when they explicitly request immediate action
+
+In this mode:
+
+1. Analyze the issue quickly
+2. Implement the complete solution immediately
+3. Make all necessary code changes. Please make multiple commits so that the changes are easier to review.
+4. Run appropriate tests and validation
+5. If the tests, are not passing, please fix the issues and continue doing this up to 3 more times until the tests pass
+6. Once the tests pass, push a branch and then suggest opening a PR which has a description of the changes made, and that
+   it make sure that it explicitly says "Fixes #ISSUE_NUMBER" to automatically close the issue when the PR is merged.
 
 ## Avoid making changes to generated files
 
-Files under `generated` directories are generated based on a different source file and should not be modified directly. Find the underlying source and modify that instead.
+Files under `generated` directories are generated based on a different source file and should not be modified directly.
+Find the underlying source and modify that instead.
 
 ## Essential Commands
 
