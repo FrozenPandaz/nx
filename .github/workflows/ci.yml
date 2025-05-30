@@ -80,9 +80,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
@@ -91,6 +88,9 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Install project dependencies
         run: |
