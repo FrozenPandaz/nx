@@ -1,0 +1,92 @@
+name: Claude Issue Triage
+
+on:
+  issues:
+    types: [opened, labeled]
+  issue_comment:
+    types: [created]
+
+jobs:
+  triage:
+    if: |
+      contains(fromJson('["FrozenPandaz", "jaysoo", "AgentEnder", "barbados-clemens", "mandarini", "leosvelperez", "isaacplmann", "JamesHenry", "MaxKless", "xiongemi", "nartc", "Coly010", "vsavkin", "meeroslav", "philipjfulcher"]'), github.actor) &&
+      ((github.event_name == 'issues' && github.event.action == 'opened') ||
+       (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'claude:plan') ||
+       (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude plan')))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          version: 9.8.0
+          run_install: false
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install project dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Add planning context comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `🤖 **Claude Planning Phase Initiated**
+              
+              @claude please analyze this GitHub issue and create a detailed implementation plan using the \`/gh-issue-plan\` command structure.
+              
+              **Issue Details:**
+              - Title: ${{ github.event.issue.title }}
+              - Number: #${{ github.event.issue.number }}
+              
+              **Required Plan Sections:**
+              1. Problem analysis and root cause identification
+              2. Proposed solution approach  
+              3. Files that need to be modified
+              4. Implementation steps
+              5. Testing strategy
+              6. Potential risks or considerations
+              
+              Please structure your response according to the Planning Phase Template in the gh-issue-plan command.`
+            });
+
+      - name: Run Claude Issue Planning
+        id: claude-plan
+        uses: anthropics/claude-code-action@beta
+        timeout-minutes: 30
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Add planning label
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['claude:planned']
+            });

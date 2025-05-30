@@ -2,7 +2,7 @@
   "mcpServers": {
     "nx": {
       "command": "pnpm",
-      "args": ["nx-mcp", "/home/jason/projects/nx"],
+      "args": ["nx-mcp", "."],
       "env": {}
     }
   }

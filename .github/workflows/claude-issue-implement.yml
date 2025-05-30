@@ -1,0 +1,174 @@
+name: Claude Issue Implementation
+
+on:
+  issue_comment:
+    types: [created]
+  issues:
+    types: [labeled]
+
+jobs:
+  implement:
+    if: |
+      contains(fromJson('["FrozenPandaz", "jaysoo", "AgentEnder", "barbados-clemens", "mandarini", "leosvelperez", "isaacplmann", "JamesHenry", "MaxKless", "xiongemi", "nartc", "Coly010", "vsavkin", "meeroslav", "philipjfulcher"]'), github.actor) &&
+      ((github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude implement')) ||
+       (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'claude:implement'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      actions: read
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 250
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates lsof libvips-dev libglib2.0-dev libgirepository1.0-dev
+
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          version: 9.8.0
+          run_install: false
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install project dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm playwright install --with-deps
+
+      - name: Cache Rust toolchain and cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            .gradle/
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Get issue context
+        id: issue-context
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            
+            // Find the Claude plan comment
+            const planComment = comments.find(comment => 
+              comment.user.login === 'github-actions[bot]' && 
+              comment.body.includes('## Implementation Plan')
+            );
+            
+            return {
+              title: issue.title,
+              body: issue.body,
+              number: issue.number,
+              planComment: planComment ? planComment.body : null,
+              labels: issue.labels.map(label => label.name)
+            };
+
+      - name: Add implementation context comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueData = ${{ steps.issue-context.outputs.result }};
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `🤖 **Claude Implementation Phase Initiated**
+              
+              @claude please implement the solution for this GitHub issue based on the existing plan and context. Use the \`/gh-issue-plan\` command as reference.
+              
+              **Issue Details:**
+              - Title: ${issueData.title}
+              - Number: #${issueData.number}
+              
+              **Implementation Instructions:**
+              1. Follow the implementation plan from previous comments
+              2. Make the necessary code changes to fix the issue
+              3. Run validation: \`nx run-many -t test,build,lint -p PROJECT_NAME\`
+              4. Run affected tests: \`nx affected -t build,test,lint\`
+              5. Run e2e tests: \`nx affected -t e2e-local\` (if applicable)
+              6. Format code: \`npx nx prettier -- FILES\`
+              7. Create feature branch: \`fix/issue-${issueData.number}\`
+              8. Commit with conventional format
+              9. Suggest PR: "fix: [description] (fixes #${issueData.number})"
+              
+              **Guidelines:**
+              - Focus only on the specific issue
+              - Follow existing code patterns
+              - Include proper error handling
+              - Update tests if necessary
+              - Avoid modifying generated files
+              
+              ${issueData.planComment ? '**Previous Plan Available:** Yes' : '**⚠️ Warning:** No previous plan found - please create one first.'}`
+            });
+
+      - name: Run Claude Issue Implementation
+        id: claude-implement
+        uses: anthropics/claude-code-action@beta
+        timeout-minutes: 90
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Add implementation label
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['claude:implemented']
+            });
