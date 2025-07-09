@@ -241,11 +241,23 @@ impl WorkspaceContext {
         let workspace_root_path = PathBuf::from(&workspace_root);
         let additional_project_root_tuples: Vec<(String, PathBuf)> = additional_project_roots
             .iter()
-            .map(|root| (root.clone(), PathBuf::from(root)))
+            .map(|root| {
+                let root_path = PathBuf::from(root);
+                // For file categorization, we need relative paths from workspace root
+                let relative_path = if root_path.is_absolute() {
+                    root_path.strip_prefix(&workspace_root_path)
+                        .unwrap_or(&root_path)
+                        .to_path_buf()
+                } else {
+                    root_path
+                };
+                (root.clone(), relative_path)
+            })
             .collect();
-        let additional_project_root_paths: Vec<PathBuf> = additional_project_root_tuples
+        // For file gathering, we need absolute paths
+        let additional_project_root_paths: Vec<PathBuf> = additional_project_roots
             .iter()
-            .map(|(_, path)| path.clone())
+            .map(|root| PathBuf::from(root))
             .collect();
         let files_worker = FilesWorker::gather_files(&workspace_root_path, &additional_project_root_paths, cache_dir);
 

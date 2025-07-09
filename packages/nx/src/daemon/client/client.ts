@@ -33,7 +33,13 @@ import {
   DaemonProjectGraphError,
   ProjectGraphError,
 } from '../../project-graph/error-types';
-import { IS_WASM, NxWorkspaceFiles, TaskRun, TaskTarget } from '../../native';
+import {
+  type FilePathsByRoot,
+  IS_WASM,
+  NxWorkspaceFiles,
+  TaskRun,
+  TaskTarget,
+} from '../../native';
 import {
   HandleGlobMessage,
   HandleMultiGlobMessage,
@@ -347,7 +353,7 @@ export class DaemonClient {
     return this.sendToDaemonViaQueue(message);
   }
 
-  multiGlob(globs: string[], exclude?: string[]): Promise<Record<string, string[]>> {
+  multiGlob(globs: string[], exclude?: string[]): Promise<FilePathsByRoot> {
     const message: HandleMultiGlobMessage = {
       type: 'MULTI_GLOB',
       globs,
@@ -380,7 +386,6 @@ export class DaemonClient {
     };
     return this.sendToDaemonViaQueue(message);
   }
-
 
   hashGlob(globs: string[], exclude?: string[]): Promise<string> {
     const message: HandleHashGlobMessage = {
