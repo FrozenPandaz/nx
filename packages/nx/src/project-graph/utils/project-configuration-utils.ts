@@ -9,6 +9,7 @@ import {
 import { NX_PREFIX } from '../../utils/logger';
 import { readJsonFile } from '../../utils/fileutils';
 import { workspaceRoot } from '../../utils/workspace-root';
+import { multiGlobWithWorkspaceContext } from '../../utils/workspace-context';
 
 import { minimatch } from 'minimatch';
 import { join } from 'path';
@@ -335,13 +336,13 @@ export type ConfigurationResult = {
  *
  * @param root The workspace root
  * @param nxJson The NxJson configuration
- * @param workspaceFiles A list of non-ignored workspace files
+ * @param rootToFilesMap Files organized by root
  * @param plugins The plugins that should be used to infer project configuration
  */
 export async function createProjectConfigurationsWithPlugins(
   root: string = workspaceRoot,
   nxJson: NxJsonConfiguration,
-  projectFiles: string[][], // making this parameter allows devkit to pick up newly created projects
+  rootToFilesMap: Record<string, string[]>,
   plugins: LoadedNxPlugin[]
 ): Promise<ConfigurationResult> {
   performance.mark('build-project-configs:start');
@@ -393,6 +394,10 @@ export async function createProjectConfigurationsWithPlugins(
     | MultipleProjectsWithSameNameError
   > = [];
 
+  // Create projectFiles for each plugin from the root-to-files mapping
+  const allFiles = Object.values(rootToFilesMap).flat();
+  const projectFiles = plugins.map(() => allFiles);
+
   // We iterate over plugins first - this ensures that plugins specified first take precedence.
   for (const [
     index,
@@ -421,6 +426,7 @@ export async function createProjectConfigurationsWithPlugins(
     let r = createNodes(matchingConfigFiles, {
       nxJsonConfiguration: nxJson,
       workspaceRoot: root,
+      rootToFilesMap, // Pass the root-to-files mapping to plugins
     })
       .catch((e: Error) => {
         const error: AggregateCreateNodesError = isAggregateCreateNodesError(e)
@@ -580,10 +586,16 @@ export function findMatchingConfigFiles(
   const matchingConfigFiles: string[] = [];
 
   for (const file of projectFiles) {
-    if (minimatch(file, pattern, { dot: true })) {
+    // For files from additional project roots (starting with ../),
+    // normalize them for pattern matching by removing all leading ../ segments
+    const normalizedFile = file.startsWith('../')
+      ? file.replace(/^(\.\.\/)+/, '')
+      : file;
+
+    if (minimatch(normalizedFile, pattern, { dot: true })) {
       if (include) {
         const included = include.some((includedPattern) =>
-          minimatch(file, includedPattern, { dot: true })
+          minimatch(normalizedFile, includedPattern, { dot: true })
         );
         if (!included) {
           continue;
@@ -592,13 +604,14 @@ export function findMatchingConfigFiles(
 
       if (exclude) {
         const excluded = exclude.some((excludedPattern) =>
-          minimatch(file, excludedPattern, { dot: true })
+          minimatch(normalizedFile, excludedPattern, { dot: true })
         );
         if (excluded) {
           continue;
         }
       }
 
+      // Add the original file path (with ../ prefix if it was from additional project roots)
       matchingConfigFiles.push(file);
     }
   }

@@ -329,6 +329,14 @@
         }
       },
       "additionalProperties": false
+    },
+    "additionalProjectRoots": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Additional directories where projects can be located, beyond the workspace root. Supports glob patterns for flexible project discovery.",
+      "examples": [["../other-projects", "./external/*"]]
     }
   },
   "definitions": {

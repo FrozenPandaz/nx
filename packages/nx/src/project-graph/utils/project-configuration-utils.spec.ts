@@ -1795,7 +1795,7 @@ describe('project-configuration-utils', () => {
         await createProjectConfigurationsWithPlugins(
           undefined,
           {},
-          [['libs/a/project.json', 'libs/b/project.json']],
+          { workspace_root: ['libs/a/project.json', 'libs/b/project.json'] },
           [
             new LoadedNxPlugin(fakeTagPlugin, {
               plugin: fakeTagPlugin.name,
@@ -1822,7 +1822,7 @@ describe('project-configuration-utils', () => {
         await createProjectConfigurationsWithPlugins(
           undefined,
           {},
-          [['libs/a/project.json', 'libs/b/project.json']],
+          { workspace_root: ['libs/a/project.json', 'libs/b/project.json'] },
           [
             new LoadedNxPlugin(fakeTagPlugin, {
               plugin: fakeTagPlugin.name,
@@ -1845,7 +1845,7 @@ describe('project-configuration-utils', () => {
         await createProjectConfigurationsWithPlugins(
           undefined,
           {},
-          [['libs/a/project.json', 'libs/b/project.json']],
+          { workspace_root: ['libs/a/project.json', 'libs/b/project.json'] },
           [
             new LoadedNxPlugin(fakeTagPlugin, {
               plugin: fakeTagPlugin.name,
@@ -1867,7 +1867,7 @@ describe('project-configuration-utils', () => {
       const { projects } = await createProjectConfigurationsWithPlugins(
         undefined,
         {},
-        [['libs/a/project.json'], ['libs/a/project.json']],
+        { workspace_root: ['libs/a/project.json'] },
         [
           new LoadedNxPlugin(fakeTargetsPlugin, 'fake-targets-plugin'),
           new LoadedNxPlugin(fakeTagPlugin, 'fake-tag-plugin'),
@@ -1889,7 +1889,7 @@ describe('project-configuration-utils', () => {
       const error = await createProjectConfigurationsWithPlugins(
         undefined,
         {},
-        [['libs/a/project.json', 'libs/b/project.json', 'libs/c/project.json']],
+        { workspace_root: ['libs/a/project.json', 'libs/b/project.json', 'libs/c/project.json'] },
         [new LoadedNxPlugin(sameNamePlugin, 'same-name-plugin')]
       ).catch((e) => e);
       const isErrorType = isProjectConfigurationsError(error);
@@ -1913,7 +1913,7 @@ describe('project-configuration-utils', () => {
       const error = await createProjectConfigurationsWithPlugins(
         undefined,
         {},
-        [['libs/a/project.json', 'libs/b/project.json', 'libs/c/project.json']],
+        { workspace_root: ['libs/a/project.json', 'libs/b/project.json', 'libs/c/project.json'] },
         [new LoadedNxPlugin(fakeTargetsPlugin, 'fake-targets-plugin')]
       ).catch((e) => e);
       const isErrorType = isProjectConfigurationsError(error);
@@ -1934,7 +1934,7 @@ describe('project-configuration-utils', () => {
       const { sourceMaps } = await createProjectConfigurationsWithPlugins(
         undefined,
         {},
-        [['libs/a/project.json'], ['libs/a/project.json']],
+        { workspace_root: ['libs/a/project.json'] },
         [
           new LoadedNxPlugin(fakeTargetsPlugin, 'fake-targets-plugin'),
           new LoadedNxPlugin(fakeTagPlugin, 'fake-tag-plugin'),

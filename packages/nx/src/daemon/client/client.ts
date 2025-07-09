@@ -347,7 +347,7 @@ export class DaemonClient {
     return this.sendToDaemonViaQueue(message);
   }
 
-  multiGlob(globs: string[], exclude?: string[]): Promise<string[][]> {
+  multiGlob(globs: string[], exclude?: string[]): Promise<Record<string, string[]>> {
     const message: HandleMultiGlobMessage = {
       type: 'MULTI_GLOB',
       globs,
@@ -380,6 +380,7 @@ export class DaemonClient {
     };
     return this.sendToDaemonViaQueue(message);
   }
+
 
   hashGlob(globs: string[], exclude?: string[]): Promise<string> {
     const message: HandleHashGlobMessage = {

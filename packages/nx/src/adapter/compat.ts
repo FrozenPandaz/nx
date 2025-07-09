@@ -60,6 +60,7 @@ export const allowedWorkspaceExtensions = [
   'defaultBase',
   'tasksRunnerOptions',
   'workspaceLayout',
+  'additionalProjectRoots',
   'plugins',
   'targetDefaults',
   'files',

@@ -27,6 +27,20 @@ import {
   readPackageJsonConfigurationCache,
 } from '../../../plugins/package-json';
 
+// Enhanced approach: use the root-to-files mapping for precise detection
+const isFromAdditionalProjectRootsWithRootToFilesMap = (
+  packageJsonPath: string,
+  rootToFilesMap: Record<string, string[]>
+) => {
+  // Check if the file exists in any additional project root (not workspace_root)
+  for (const [rootName, files] of Object.entries(rootToFilesMap)) {
+    if (rootName !== 'workspace_root' && files.includes(packageJsonPath)) {
+      return true;
+    }
+  }
+  return false;
+};
+
 export const createNodesV2: CreateNodesV2 = [
   combineGlobPatterns(
     'package.json',
@@ -53,11 +67,21 @@ export const createNodesV2: CreateNodesV2 = [
       (packageJsonPath, options, context) => {
         const isInPackageManagerWorkspaces =
           isInPackageJsonWorkspaces(packageJsonPath);
+
+        // Use the new rootToFilesMap approach if available
+        const isFromAdditionalRoots =
+          isFromAdditionalProjectRootsWithRootToFilesMap(
+            packageJsonPath,
+            context.rootToFilesMap
+          );
+
         if (
           !isInPackageManagerWorkspaces &&
-          !isNextToProjectJson(packageJsonPath)
+          !isNextToProjectJson(packageJsonPath) &&
+          !isFromAdditionalRoots
         ) {
-          // Skip if package.json is not part of the package.json workspaces and not next to a project.json.
+          // Skip if package.json is not part of the package.json workspaces,
+          // not next to a project.json, and not from additional project roots.
           return null;
         }
 

@@ -696,6 +696,19 @@ export interface NxJsonConfiguration<T = '*' | string[]> {
      */
     autoExit?: boolean | number;
   };
+
+  /**
+   * Additional directories where projects can be located, beyond the workspace root.
+   * Supports glob patterns for flexible project discovery.
+   *
+   * @example
+   * ```json
+   * {
+   *   "additionalProjectRoots": ["../other-projects", "./external/*"]
+   * }
+   * ```
+   */
+  additionalProjectRoots?: string[];
 }
 
 export type PluginConfiguration = string | ExpandedPluginConfiguration;

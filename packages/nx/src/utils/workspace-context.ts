@@ -3,6 +3,7 @@ import { performance } from 'perf_hooks';
 import { workspaceDataDirectoryForWorkspace } from './cache-directory';
 import { isOnDaemon } from '../daemon/is-on-daemon';
 import { daemonClient } from '../daemon/client/client';
+import { readNxJson } from '../config/nx-json';
 
 let workspaceContext: WorkspaceContext | undefined;
 
@@ -10,8 +11,14 @@ export function setupWorkspaceContext(workspaceRoot: string) {
   const { WorkspaceContext } =
     require('../native') as typeof import('../native');
   performance.mark('workspace-context');
+
+  // Read additional project roots from nx.json
+  const nxJson = readNxJson(workspaceRoot);
+  const additionalProjectRoots = nxJson.additionalProjectRoots ?? [];
+
   workspaceContext = new WorkspaceContext(
     workspaceRoot,
+    additionalProjectRoots,
     workspaceDataDirectoryForWorkspace(workspaceRoot)
   );
   performance.mark('workspace-context:end');
@@ -67,7 +74,7 @@ export async function multiGlobWithWorkspaceContext(
   workspaceRoot: string,
   globs: string[],
   exclude?: string[]
-) {
+): Promise<Record<string, string[]>> {
   if (isOnDaemon() || !daemonClient.enabled()) {
     ensureContextAvailable(workspaceRoot);
     return workspaceContext.multiGlob(globs, exclude);
@@ -155,6 +162,7 @@ export async function getFilesInDirectoryUsingContext(
   return daemonClient.getFilesInDirectory(dir);
 }
 
+
 export function updateProjectFiles(
   projectRootMappings: Record<string, string>,
   rustReferences: NxWorkspaceFilesExternals,
@@ -170,7 +178,7 @@ export function updateProjectFiles(
   );
 }
 
-function ensureContextAvailable(workspaceRoot: string) {
+export function ensureContextAvailable(workspaceRoot: string) {
   if (!workspaceContext || workspaceContext?.workspaceRoot !== workspaceRoot) {
     setupWorkspaceContext(workspaceRoot);
   }

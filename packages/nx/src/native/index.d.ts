@@ -134,22 +134,21 @@ export declare class Watcher {
 
 export declare class WorkspaceContext {
   workspaceRoot: string
-  constructor(workspaceRoot: string, cacheDir: string)
+  constructor(workspaceRoot: string, additionalProjectRoots: Array<string>, cacheDir: string)
   getWorkspaceFiles(projectRootMap: Record<string, string>): NxWorkspaceFiles
   glob(globs: Array<string>, exclude?: Array<string> | undefined | null): Array<string>
   /**
    * Performs multiple glob pattern matches against workspace files in parallel
-   * @returns An array of arrays, where each inner array contains the file paths
-   * that matched the corresponding glob pattern in the input. The outer array maintains the same order
-   * as the input globs.
+   * @returns A map of root names to arrays of file paths that matched the glob patterns
    */
-  multiGlob(globs: Array<string>, exclude?: Array<string> | undefined | null): Array<Array<string>>
+  multiGlob(globs: Array<string>, exclude?: Array<string> | undefined | null): Record<string, Array<string>>
   hashFilesMatchingGlobs(globGroups: Array<Array<string>>): Array<string>
   hashFilesMatchingGlob(globs: Array<string>, exclude?: Array<string> | undefined | null): string
   incrementalUpdate(updatedFiles: Array<string>, deletedFiles: Array<string>): Record<string, string>
   updateProjectFiles(projectRootMappings: ProjectRootMappings, projectFiles: ExternalObject<ProjectFiles>, globalFiles: ExternalObject<Array<FileData>>, updatedFiles: Record<string, string>, deletedFiles: Array<string>): UpdatedWorkspaceFiles
   allFileData(): Array<FileData>
   getFilesInDirectory(directory: string): Array<string>
+  getFilesByRoot(): Record<string, Array<FileData>>
 }
 
 export interface CachedResult {

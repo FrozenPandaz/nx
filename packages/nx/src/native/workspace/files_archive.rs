@@ -8,11 +8,11 @@ use tracing::trace;
 
 const NX_FILES_ARCHIVE: &str = "nx_files.nxt";
 
-#[derive(Archive, Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Archive, Serialize, Deserialize, PartialEq, Debug, Clone)]
 #[archive(check_bytes)]
 pub struct NxFileHashed(pub String, pub i64);
 
-#[derive(Archive, Deserialize, Serialize, Debug, PartialEq)]
+#[derive(Archive, Deserialize, Serialize, Debug, PartialEq, Clone)]
 #[archive(check_bytes)]
 pub struct NxFileHashes(HashMap<String, NxFileHashed>);
 

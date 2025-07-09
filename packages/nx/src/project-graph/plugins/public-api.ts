@@ -26,6 +26,7 @@ export interface CreateNodesContext extends CreateNodesContextV2 {
 export interface CreateNodesContextV2 {
   readonly nxJsonConfiguration: NxJsonConfiguration;
   readonly workspaceRoot: string;
+  readonly rootToFilesMap?: Record<string, string[]>;
 }
 
 /**
