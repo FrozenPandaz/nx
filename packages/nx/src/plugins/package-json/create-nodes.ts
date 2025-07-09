@@ -30,11 +30,12 @@ import {
 // Enhanced approach: use the root-to-files mapping for precise detection
 const isFromAdditionalProjectRootsWithRootToFilesMap = (
   packageJsonPath: string,
-  rootToFilesMap: Record<string, string[]>
+  rootToFilesSet: Record<string, Set<string>>,
+  workspaceRoot: string
 ) => {
-  // Check if the file exists in any additional project root (not workspace_root)
-  for (const [rootName, files] of Object.entries(rootToFilesMap)) {
-    if (rootName !== 'workspace_root' && files.includes(packageJsonPath)) {
+  // Check if the file exists in any additional project root (not the workspace root)
+  for (const files of Object.values(rootToFilesSet)) {
+    if (files.has(packageJsonPath)) {
       return true;
     }
   }
@@ -50,6 +51,14 @@ export const createNodesV2: CreateNodesV2 = [
   ),
   (configFiles, _, context) => {
     const { packageJsons, projectJsonRoots } = splitConfigFiles(configFiles);
+
+    // Convert rootToFilesMap arrays to Sets for O(1) lookup performance
+    const rootToFilesSet: Record<string, Set<string>> = {};
+    if (context.rootToFilesMap) {
+      for (const [rootPath, files] of Object.entries(context.rootToFilesMap)) {
+        rootToFilesSet[rootPath] = new Set(files);
+      }
+    }
 
     const readJson = (f) => readJsonFile(join(context.workspaceRoot, f));
     const isInPackageJsonWorkspaces =
@@ -70,9 +79,11 @@ export const createNodesV2: CreateNodesV2 = [
 
         // Use the new rootToFilesMap approach if available
         const isFromAdditionalRoots =
+          context.rootToFilesMap &&
           isFromAdditionalProjectRootsWithRootToFilesMap(
             packageJsonPath,
-            context.rootToFilesMap
+            rootToFilesSet,
+            context.workspaceRoot
           );
 
         if (

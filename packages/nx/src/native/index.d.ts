@@ -139,16 +139,16 @@ export declare class WorkspaceContext {
   glob(globs: Array<string>, exclude?: Array<string> | undefined | null): Array<string>
   /**
    * Performs multiple glob pattern matches against workspace files in parallel
-   * @returns A map of root names to arrays of file paths that matched the glob patterns
+   * @returns A map of root paths to arrays of file paths that matched the glob patterns
    */
-  multiGlob(globs: Array<string>, exclude?: Array<string> | undefined | null): Record<string, Array<string>>
+  multiGlob(globs: Array<string>, exclude?: Array<string> | undefined | null): FilePathsByRoot
   hashFilesMatchingGlobs(globGroups: Array<Array<string>>): Array<string>
   hashFilesMatchingGlob(globs: Array<string>, exclude?: Array<string> | undefined | null): string
   incrementalUpdate(updatedFiles: Array<string>, deletedFiles: Array<string>): Record<string, string>
   updateProjectFiles(projectRootMappings: ProjectRootMappings, projectFiles: ExternalObject<ProjectFiles>, globalFiles: ExternalObject<Array<FileData>>, updatedFiles: Record<string, string>, deletedFiles: Array<string>): UpdatedWorkspaceFiles
   allFileData(): Array<FileData>
   getFilesInDirectory(directory: string): Array<string>
-  getFilesByRoot(): Record<string, Array<FileData>>
+  getFilesByRoot(): FilesByRoot
 }
 
 export interface CachedResult {
@@ -201,6 +201,16 @@ export interface FileData {
 export interface FileMap {
   projectFileMap: ProjectFiles
   nonProjectFiles: Array<FileData>
+}
+
+export interface FilePathsByRoot {
+  workspaceFiles: Array<string>
+  additionalRootFiles: Record<string, Array<string>>
+}
+
+export interface FilesByRoot {
+  workspaceFiles: Array<FileData>
+  additionalRootFiles: Record<string, Array<FileData>>
 }
 
 export interface FileSetInput {

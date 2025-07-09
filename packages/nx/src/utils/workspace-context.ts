@@ -1,5 +1,8 @@
-import type { NxWorkspaceFilesExternals, WorkspaceContext } from '../native';
-import { performance } from 'perf_hooks';
+import type {
+  FilePathsByRoot,
+  NxWorkspaceFilesExternals,
+  WorkspaceContext,
+} from '../native';
 import { workspaceDataDirectoryForWorkspace } from './cache-directory';
 import { isOnDaemon } from '../daemon/is-on-daemon';
 import { daemonClient } from '../daemon/client/client';
@@ -14,7 +17,19 @@ export function setupWorkspaceContext(workspaceRoot: string) {
 
   // Read additional project roots from nx.json
   const nxJson = readNxJson(workspaceRoot);
-  const additionalProjectRoots = nxJson.additionalProjectRoots ?? [];
+  const additionalProjectRoots = (nxJson.additionalProjectRoots ?? []).map(
+    (root) => {
+      // Resolve relative paths to absolute paths
+      if (
+        root.startsWith('./') ||
+        root.startsWith('../') ||
+        !root.startsWith('/')
+      ) {
+        return require('path').resolve(workspaceRoot, root);
+      }
+      return root;
+    }
+  );
 
   workspaceContext = new WorkspaceContext(
     workspaceRoot,
@@ -74,7 +89,7 @@ export async function multiGlobWithWorkspaceContext(
   workspaceRoot: string,
   globs: string[],
   exclude?: string[]
-): Promise<Record<string, string[]>> {
+): Promise<FilePathsByRoot> {
   if (isOnDaemon() || !daemonClient.enabled()) {
     ensureContextAvailable(workspaceRoot);
     return workspaceContext.multiGlob(globs, exclude);
@@ -161,7 +176,6 @@ export async function getFilesInDirectoryUsingContext(
   }
   return daemonClient.getFilesInDirectory(dir);
 }
-
 
 export function updateProjectFiles(
   projectRootMappings: Record<string, string>,

@@ -4,6 +4,7 @@ use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+
 use napi::bindgen_prelude::External;
 use rayon::prelude::*;
 use tracing::{trace, warn};
@@ -20,19 +21,33 @@ use crate::native::workspace::files_hashing::{full_files_hash, selective_files_h
 use crate::native::workspace::types::{
     FileMap, NxWorkspaceFiles, NxWorkspaceFilesExternals, ProjectFiles, UpdatedWorkspaceFiles,
 };
+
 use crate::native::workspace::workspace_files;
+
+#[napi(object)]
+pub struct FilesByRoot {
+    pub workspace_files: Vec<FileData>,
+    pub additional_root_files: HashMap<String, Vec<FileData>>,
+}
+
+#[napi(object)]
+pub struct FilePathsByRoot {
+    pub workspace_files: Vec<String>,
+    pub additional_root_files: HashMap<String, Vec<String>>,
+}
 
 #[napi]
 pub struct WorkspaceContext {
     pub workspace_root: String,
     workspace_root_path: PathBuf,
     additional_project_roots: Vec<String>,
+    additional_project_root_tuples: Vec<(String, PathBuf)>,
     files_worker: FilesWorker,
 }
 
 type Files = Vec<(PathBuf, String)>;
 
-fn gather_and_hash_files(workspace_root: &Path, additional_project_roots: &[String], cache_dir: String) -> Vec<(PathBuf, String)> {
+fn gather_and_hash_files(workspace_root: &Path, additional_project_roots: &[PathBuf], cache_dir: String) -> Vec<(PathBuf, String)> {
     let archived_files = read_files_archive(&cache_dir);
 
     trace!("Gathering files in {}", workspace_root.display());
@@ -46,8 +61,7 @@ fn gather_and_hash_files(workspace_root: &Path, additional_project_roots: &[Stri
     };
 
     // Gather files from additional project roots
-    for additional_root in additional_project_roots {
-        let additional_root_path = Path::new(additional_root);
+    for additional_root_path in additional_project_roots {
         if additional_root_path.exists() {
             trace!("Gathering files in additional root: {}", additional_root_path.display());
             let additional_file_hashes = full_files_hash(additional_root_path);
@@ -76,7 +90,7 @@ fn gather_and_hash_files(workspace_root: &Path, additional_project_roots: &[Stri
 struct FilesWorker(Option<Arc<(NxMutex<Files>, NxCondvar)>>);
 impl FilesWorker {
     #[cfg(not(target_arch = "wasm32"))]
-    fn gather_files(workspace_root: &Path, additional_project_roots: &[String], cache_dir: String) -> Self {
+    fn gather_files(workspace_root: &Path, additional_project_roots: &[PathBuf], cache_dir: String) -> Self {
         if !workspace_root.exists() {
             warn!(
                 "workspace root does not exist: {}",
@@ -109,7 +123,7 @@ impl FilesWorker {
     }
 
     #[cfg(target_arch = "wasm32")]
-    fn gather_files(workspace_root: &Path, additional_project_roots: &[String], cache_dir: String) -> Self {
+    fn gather_files(workspace_root: &Path, additional_project_roots: &[PathBuf], cache_dir: String) -> Self {
         if !workspace_root.exists() {
             warn!(
                 "workspace root does not exist: {}",
@@ -225,13 +239,22 @@ impl WorkspaceContext {
         trace!(?workspace_root, ?additional_project_roots);
 
         let workspace_root_path = PathBuf::from(&workspace_root);
-        let files_worker = FilesWorker::gather_files(&workspace_root_path, &additional_project_roots, cache_dir);
+        let additional_project_root_tuples: Vec<(String, PathBuf)> = additional_project_roots
+            .iter()
+            .map(|root| (root.clone(), PathBuf::from(root)))
+            .collect();
+        let additional_project_root_paths: Vec<PathBuf> = additional_project_root_tuples
+            .iter()
+            .map(|(_, path)| path.clone())
+            .collect();
+        let files_worker = FilesWorker::gather_files(&workspace_root_path, &additional_project_root_paths, cache_dir);
 
         WorkspaceContext {
             files_worker,
             workspace_root,
             workspace_root_path,
             additional_project_roots,
+            additional_project_root_tuples,
         }
     }
 
@@ -256,23 +279,31 @@ impl WorkspaceContext {
     }
 
     /// Performs multiple glob pattern matches against workspace files in parallel
-    /// @returns A map of root names to arrays of file paths that matched the glob patterns
+    /// @returns A map of root paths to arrays of file paths that matched the glob patterns
     #[napi]
     pub fn multi_glob(
         &self,
         globs: Vec<String>,
         exclude: Option<Vec<String>>,
-    ) -> napi::Result<HashMap<String, Vec<String>>> {
+    ) -> napi::Result<FilePathsByRoot> {
         let files_by_root = self.get_files_by_root();
-        let mut result = HashMap::new();
 
-        for (root_name, files) in files_by_root {
+        // Process workspace files
+        let globbed_files = glob_files(&files_by_root.workspace_files, globs.clone(), exclude.clone())?;
+        let workspace_files: Vec<String> = globbed_files.map(|file| file.file.to_owned()).collect();
+
+        // Process additional root files
+        let mut additional_root_files = HashMap::new();
+        for (root_path, files) in files_by_root.additional_root_files {
             let globbed_files = glob_files(&files, globs.clone(), exclude.clone())?;
             let file_paths: Vec<String> = globbed_files.map(|file| file.file.to_owned()).collect();
-            result.insert(root_name, file_paths);
+            additional_root_files.insert(root_path, file_paths);
         }
 
-        Ok(result)
+        Ok(FilePathsByRoot {
+            workspace_files,
+            additional_root_files,
+        })
     }
 
     #[napi]
@@ -437,41 +468,31 @@ impl WorkspaceContext {
     }
 
     #[napi]
-    pub fn get_files_by_root(&self) -> HashMap<String, Vec<FileData>> {
+    pub fn get_files_by_root(&self) -> FilesByRoot {
         let all_files = self.all_file_data();
-        let mut result = HashMap::new();
-        
-        // Initialize with workspace root
-        result.insert("workspace_root".to_string(), Vec::new());
-        
-        // Initialize additional project roots  
-        for (index, _) in self.additional_project_roots.iter().enumerate() {
-            result.insert(format!("additional_project_root_{}", index), Vec::new());
-        }
+        let mut workspace_files = Vec::new();
+        let mut additional_root_files = HashMap::new();
         
         // Categorize files by their root
         for file in all_files {
             let file_path = Path::new(&file.file);
-            let mut assigned = false;
             
             // Check if file belongs to any additional project root
-            for (index, additional_root) in self.additional_project_roots.iter().enumerate() {
-                let additional_root_path = Path::new(additional_root);
-                if file_path.starts_with(additional_root_path) {
-                    let root_key = format!("additional_project_root_{}", index);
-                    result.get_mut(&root_key).unwrap().push(file.clone());
-                    assigned = true;
-                    break;
-                }
-            }
-            
-            // If not assigned to any additional root, assign to workspace root
-            if !assigned {
-                result.get_mut("workspace_root").unwrap().push(file);
+            if let Some((root_string, _)) = self.additional_project_root_tuples.iter()
+                .find(|(_, path)| file_path.starts_with(path)) {
+                additional_root_files.entry(root_string.clone())
+                    .or_insert_with(Vec::new)
+                    .push(file);
+            } else {
+                // File belongs to workspace root
+                workspace_files.push(file);
             }
         }
         
-        result
+        FilesByRoot {
+            workspace_files,
+            additional_root_files,
+        }
     }
 }
 

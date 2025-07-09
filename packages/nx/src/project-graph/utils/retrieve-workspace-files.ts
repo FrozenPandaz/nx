@@ -69,7 +69,7 @@ export async function retrieveProjectConfigurations(
 ): Promise<ConfigurationResult> {
   const pluginsWithCreateNodes = plugins.filter((p) => !!p.createNodes);
   const globPatterns = getGlobPatternsOfPlugins(pluginsWithCreateNodes);
-  const rootToFilesMap = await multiGlobWithWorkspaceContext(
+  const filesByRoot = await multiGlobWithWorkspaceContext(
     workspaceRoot,
     globPatterns
   );
@@ -77,7 +77,7 @@ export async function retrieveProjectConfigurations(
   return createProjectConfigurationsWithPlugins(
     workspaceRoot,
     nxJson,
-    rootToFilesMap,
+    filesByRoot,
     pluginsWithCreateNodes
   );
 }
@@ -114,11 +114,16 @@ export async function retrieveProjectConfigurationPaths(
   plugins: Array<LoadedNxPlugin>
 ): Promise<string[]> {
   const projectGlobPatterns = getGlobPatternsOfPlugins(plugins);
-  const rootToFilesMap = await multiGlobWithWorkspaceContext(
+  const filesByRoot = await multiGlobWithWorkspaceContext(
     root,
     projectGlobPatterns
   );
-  return Object.values(rootToFilesMap).flat();
+  
+  // Flatten all files from workspace and additional roots
+  return [
+    ...filesByRoot.workspaceFiles,
+    ...Object.values(filesByRoot.additionalRootFiles).flat(),
+  ];
 }
 
 const projectsWithoutPluginCache = new Map<
@@ -139,12 +144,15 @@ export async function retrieveProjectConfigurationsWithoutPluginInference(
     return projectsWithoutPluginCache.get(cacheKey);
   }
 
-  const rootToFilesMap =
-    (await multiGlobWithWorkspaceContext(root, projectGlobPatterns)) ?? {};
+  const filesByRoot = await multiGlobWithWorkspaceContext(
+    root,
+    projectGlobPatterns
+  );
+  
   const { projects } = await createProjectConfigurationsWithPlugins(
     root,
     nxJson,
-    rootToFilesMap,
+    filesByRoot,
     plugins
   );
 
