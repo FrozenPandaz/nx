@@ -100,9 +100,9 @@ node_modules/
 .specstory/**
 .cursorindexingignore
 # OS specific
-# Task files
-tasks.json
-tasks/
+# Task files (workspace root only)
+/tasks.json
+/tasks/
 
 # Upstream docs local configuration (machine-specific)
 .upstreamdocs.local.json
