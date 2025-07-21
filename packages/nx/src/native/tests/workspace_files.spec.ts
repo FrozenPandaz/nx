@@ -6,17 +6,6 @@ import { readJsonFile } from '../../utils/fileutils';
 import { cacheDirectoryForWorkspace } from '../../utils/cache-directory';
 
 describe('Workspace Context', () => {
-  function createParseConfigurationsFunction(tempDir: string) {
-    return async (filenames: string[]) => {
-      const res = {};
-      for (const filename of filenames) {
-        const json = readJsonFile(join(tempDir, filename));
-        res[dirname(filename)] = json.name;
-      }
-      return res;
-    };
-  }
-
   it('should gather workspace file information', async () => {
     const fs = new TempFs('workspace-files');
     const nxJson: NxJsonConfiguration = {};
@@ -223,7 +212,7 @@ describe('Workspace Context', () => {
       fs.tempDir,
       [
         join(fs.tempDir, 'additional-root1'),
-        join(fs.tempDir, 'additional-root2')
+        join(fs.tempDir, 'additional-root2'),
       ], // additional project roots
       cacheDirectoryForWorkspace(fs.tempDir)
     );
@@ -232,7 +221,7 @@ describe('Workspace Context', () => {
 
     // Check that workspace files are properly categorized
     expect(filesByRoot.workspaceFiles.length).toBeGreaterThan(0);
-    const workspaceFileNames = filesByRoot.workspaceFiles.map(f => f.file);
+    const workspaceFileNames = filesByRoot.workspaceFiles.map((f) => f.file);
     expect(workspaceFileNames).toContain('workspace-file.txt');
     expect(workspaceFileNames).toContain('libs/project1/project.json');
     expect(workspaceFileNames).toContain('libs/project1/index.js');
@@ -242,32 +231,50 @@ describe('Workspace Context', () => {
     // Check that additional project root files are properly categorized
     const additionalRoot1Key = join(fs.tempDir, 'additional-root1');
     const additionalRoot2Key = join(fs.tempDir, 'additional-root2');
-    expect(Object.keys(filesByRoot.additionalRootFiles)).toContain(additionalRoot1Key);
-    expect(Object.keys(filesByRoot.additionalRootFiles)).toContain(additionalRoot2Key);
+    expect(Object.keys(filesByRoot.additionalRootFiles)).toContain(
+      additionalRoot1Key
+    );
+    expect(Object.keys(filesByRoot.additionalRootFiles)).toContain(
+      additionalRoot2Key
+    );
 
     // Check files in first additional root
-    const additionalRoot1Files = filesByRoot.additionalRootFiles[additionalRoot1Key];
+    const additionalRoot1Files =
+      filesByRoot.additionalRootFiles[additionalRoot1Key];
     expect(additionalRoot1Files).toBeDefined();
     expect(additionalRoot1Files.length).toBeGreaterThan(0);
-    const additionalRoot1FileNames = additionalRoot1Files.map(f => f.file);
-    expect(additionalRoot1FileNames).toContain('additional-root1/project-a/package.json');
-    expect(additionalRoot1FileNames).toContain('additional-root1/project-a/index.js');
-    expect(additionalRoot1FileNames).toContain('additional-root1/shared-file.txt');
+    const additionalRoot1FileNames = additionalRoot1Files.map((f) => f.file);
+    expect(additionalRoot1FileNames).toContain(
+      'additional-root1/project-a/package.json'
+    );
+    expect(additionalRoot1FileNames).toContain(
+      'additional-root1/project-a/index.js'
+    );
+    expect(additionalRoot1FileNames).toContain(
+      'additional-root1/shared-file.txt'
+    );
 
     // Check files in second additional root
-    const additionalRoot2Files = filesByRoot.additionalRootFiles[additionalRoot2Key];
+    const additionalRoot2Files =
+      filesByRoot.additionalRootFiles[additionalRoot2Key];
     expect(additionalRoot2Files).toBeDefined();
     expect(additionalRoot2Files.length).toBeGreaterThan(0);
-    const additionalRoot2FileNames = additionalRoot2Files.map(f => f.file);
-    expect(additionalRoot2FileNames).toContain('additional-root2/project-b/package.json');
-    expect(additionalRoot2FileNames).toContain('additional-root2/project-b/index.js');
+    const additionalRoot2FileNames = additionalRoot2Files.map((f) => f.file);
+    expect(additionalRoot2FileNames).toContain(
+      'additional-root2/project-b/package.json'
+    );
+    expect(additionalRoot2FileNames).toContain(
+      'additional-root2/project-b/index.js'
+    );
     expect(additionalRoot2FileNames).toContain('additional-root2/config.json');
 
     // Ensure files are not duplicated between categories
-    const allAdditionalRootFileNames = Object.values(filesByRoot.additionalRootFiles)
+    const allAdditionalRootFileNames = Object.values(
+      filesByRoot.additionalRootFiles
+    )
       .flat()
-      .map(f => f.file);
-    
+      .map((f) => f.file);
+
     for (const workspaceFileName of workspaceFileNames) {
       expect(allAdditionalRootFileNames).not.toContain(workspaceFileName);
     }
@@ -277,15 +284,15 @@ describe('Workspace Context', () => {
     const fs = new TempFs('workspace-files-multiglob');
     const nxJson: NxJsonConfiguration = {};
     await fs.createFiles({
-      './nx.json': JSON.stringify(nxJson),
-      './package.json': JSON.stringify({
+      './main/nx.json': JSON.stringify(nxJson),
+      './main/package.json': JSON.stringify({
         name: 'repo-name',
         version: '0.0.0',
         dependencies: {},
       }),
       // Files in workspace root
-      './workspace-config.json': JSON.stringify({ workspace: true }),
-      './libs/project1/project.json': JSON.stringify({
+      './main/workspace-config.json': JSON.stringify({ workspace: true }),
+      './main/libs/project1/project.json': JSON.stringify({
         name: 'project1',
       }),
       // Files in additional project root
@@ -296,18 +303,12 @@ describe('Workspace Context', () => {
     });
 
     const context = new WorkspaceContext(
-      fs.tempDir,
+      join(fs.tempDir, 'main'),
       [join(fs.tempDir, 'additional-root')], // additional project roots
       cacheDirectoryForWorkspace(fs.tempDir)
     );
 
     const result = context.multiGlob(['**/*.json']);
-
-    // Check that result has the expected structure
-    expect(result).toHaveProperty('workspaceFiles');
-    expect(result).toHaveProperty('additionalRootFiles');
-    expect(Array.isArray(result.workspaceFiles)).toBe(true);
-    expect(typeof result.additionalRootFiles).toBe('object');
 
     // Check workspace files contain expected JSON files
     expect(result.workspaceFiles).toContain('nx.json');
@@ -317,10 +318,14 @@ describe('Workspace Context', () => {
 
     // Check additional root files
     const additionalRootKey = join(fs.tempDir, 'additional-root');
-    expect(Object.keys(result.additionalRootFiles)).toContain(additionalRootKey);
+    expect(Object.keys(result.additionalRootFiles)).toContain(
+      additionalRootKey
+    );
     const additionalRootFiles = result.additionalRootFiles[additionalRootKey];
     expect(additionalRootFiles).toBeDefined();
-    expect(additionalRootFiles).toContain('additional-root/project-a/package.json');
+    expect(additionalRootFiles).toContain(
+      'additional-root/project-a/package.json'
+    );
     expect(additionalRootFiles).toContain('additional-root/config.json');
 
     // Ensure no overlap between workspace and additional root files
@@ -422,88 +427,4 @@ describe('Workspace Context', () => {
       expect(results).toContain('file.js');
     });
   });
-
-  // describe('errors', () => {
-  //   it('it should infer names of configuration files without a name', async () => {
-  //     const fs = new TempFs('workspace-files');
-  //     const nxJson: NxJsonConfiguration = {};
-  //     await fs.createFiles({
-  //       './nx.json': JSON.stringify(nxJson),
-  //       './package.json': JSON.stringify({
-  //         name: 'repo-name',
-  //         version: '0.0.0',
-  //         dependencies: {},
-  //       }),
-  //       './libs/project1/project.json': JSON.stringify({
-  //         name: 'project1',
-  //       }),
-  //       './libs/project1/index.js': '',
-  //       './libs/project2/project.json': JSON.stringify({}),
-  //     });
-  //
-  //     let globs = ['project.json', '**/project.json', 'libs/*/package.json'];
-  //     expect(getWorkspaceFilesNative(fs.tempDir, globs).projectFileMap)
-  //       .toMatchInlineSnapshot(`
-  //       {
-  //         "libs/project1": [
-  //           {
-  //             "file": "libs/project1/index.js",
-  //             "hash": "3244421341483603138",
-  //           },
-  //           {
-  //             "file": "libs/project1/project.json",
-  //             "hash": "13466615737813422520",
-  //           },
-  //         ],
-  //         "libs/project2": [
-  //           {
-  //             "file": "libs/project2/project.json",
-  //             "hash": "1389868326933519382",
-  //           },
-  //         ],
-  //       }
-  //     `);
-  //   });
-  //
-  //   it('handles comments', async () => {
-  //     const fs = new TempFs('workspace-files');
-  //     const nxJson: NxJsonConfiguration = {};
-  //     await fs.createFiles({
-  //       './nx.json': JSON.stringify(nxJson),
-  //       './package.json': JSON.stringify({
-  //         name: 'repo-name',
-  //         version: '0.0.0',
-  //         dependencies: {},
-  //       }),
-  //       './libs/project1/project.json': `{
-  //       "name": "temp"
-  //       // this should not fail
-  //       }`,
-  //       './libs/project1/index.js': '',
-  //     });
-  //
-  //     let globs = ['project.json', '**/project.json', 'libs/*/package.json'];
-  //     expect(() => getWorkspaceFilesNative(fs.tempDir, globs)).not.toThrow();
-  //   });
-  //
-  //   it('handles extra comma', async () => {
-  //     const fs = new TempFs('workspace-files');
-  //     const nxJson: NxJsonConfiguration = {};
-  //     await fs.createFiles({
-  //       './nx.json': JSON.stringify(nxJson),
-  //       './package.json': JSON.stringify({
-  //         name: 'repo-name',
-  //         version: '0.0.0',
-  //         dependencies: {},
-  //       }),
-  //       './libs/project1/project.json': `{
-  //       "name": "temp",
-  //       }`,
-  //       './libs/project1/index.js': '',
-  //     });
-  //
-  //     let globs = ['**/project.json'];
-  //     expect(() => getWorkspaceFilesNative(fs.tempDir, globs)).not.toThrow();
-  //   });
-  // });
 });
