@@ -42,7 +42,6 @@ jobs:
   #     we should generate an applicable version number within publish-resolve-data.js and use a custom ref of the PR branch name.
   resolve-required-data:
     name: Resolve Required Data
-    if: ${{ github.repository_owner == 'nrwl' }}
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.script.outputs.version }}
@@ -115,7 +114,6 @@ jobs:
 
   build:
     needs: [ resolve-required-data ]
-    if: ${{ github.repository_owner == 'nrwl' }}
     strategy:
       fail-fast: false
       matrix:
@@ -377,7 +375,6 @@ jobs:
 
   build-freebsd:
     needs: [ resolve-required-data ]
-    if: ${{ github.repository_owner == 'nrwl' }}
     runs-on: ubuntu-latest
     name: Build FreeBSD
     timeout-minutes: 45
@@ -396,11 +393,12 @@ jobs:
           NX_PREFER_TS_NODE: true
           PLAYWRIGHT_BROWSERS_PATH: 0
           NODE_VERSION: 22.16.0
+          CARGO_INCREMENTAL: 0 # Reduce Cargo Disk Usage
         with:
           operating_system: freebsd
           version: '14.0'
           architecture: x86-64
-          environment_variables: DEBUG RUSTUP_IO_THREADS CI NX_PREFER_TS_NODE PLAYWRIGHT_BROWSERS_PATH NODE_VERSION
+          environment_variables: DEBUG RUSTUP_IO_THREADS CI NX_PREFER_TS_NODE PLAYWRIGHT_BROWSERS_PATH NODE_VERSION CARGO_INCREMENTAL
           shell: bash
           run: |
             env
@@ -430,6 +428,7 @@ jobs:
             
             echo "Checking disk space before cleanup"
             df -h
+            du -h --max-depth 1 . 2>/dev/null || true
             echo "Removing unnecessary preinstalled packages"
             # List all packages first to see what's installed
             sudo pkg info -a
@@ -472,11 +471,26 @@ jobs:
             rm -rf ~/.rustup/toolchains/*/share || true
             # Remove other development tool caches
             rm -rf ~/.cache/* || true
+
+            # Remove unnecessary files from workspace
+            rm -rf docs astro-docs nx-dev
+            
             echo "Checking disk space after cleanup"
             df -h
+            du -h --max-depth 1 . 2>/dev/null || true
             
             echo "Building FreeBSD bindings"
-            pnpm nx run-many --verbose --outputStyle stream --target=build-native -- --target=x86_64-unknown-freebsd
+            BUILD_EXIT=0
+            pnpm nx run-many --verbose --outputStyle stream --target=build-native -- --target=x86_64-unknown-freebsd || BUILD_EXIT=$?
+            echo "=== Disk usage after build ==="
+            df -h
+            du -h --max-depth 1 . 2>/dev/null || true
+            du -sh ~/.rustup/ 2>/dev/null || true
+            du -sh ~/.cargo/ 2>/dev/null || true
+            if [ "$BUILD_EXIT" -ne 0 ]; then
+              echo "Build failed with exit code $BUILD_EXIT"
+              exit $BUILD_EXIT
+            fi
             echo "Cleaning up"
             pnpm nx reset
             rm -rf node_modules
@@ -494,7 +508,6 @@ jobs:
           if-no-files-found: error
 
   publish:
-    if: ${{ github.repository_owner == 'nrwl' }}
     name: Publish
     runs-on: ubuntu-latest
     environment: npm-registry
@@ -582,7 +595,6 @@ jobs:
 
   report-pending-publish:
     name: Report Pending Publish to Slack
-    if: ${{ github.repository_owner == 'nrwl' }}
     needs:
       - resolve-required-data
       - build-freebsd
