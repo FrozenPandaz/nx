@@ -58,6 +58,14 @@ export function createGradleProject(
     appendToGitignore(cwd, '.kotlin/');
   }
 
+  // Raise Gradle and Kotlin daemon heap sizes for the generated workspace.
+  // The `dev.nx.gradle.project-graph` plugin (added by `nx add @nx/gradle`)
+  // triggers compilation of buildSrc, and in kotlin-dsl mode that compile
+  // expands a large generated accessors set. The default Kotlin daemon heap
+  // (~256m) is too small and OOMs with "GC overhead limit exceeded" on the
+  // CI runner where org.gradle.jvmargs is already pinned to -Xmx512m.
+  ensureDaemonHeap(cwd);
+
   try {
     e2eConsoleLogger(
       runCommand(`${gradleCommand} clean --no-daemon`, {
@@ -94,6 +102,57 @@ export function createGradleProject(
   addSpringBootPlugin(
     join(cwd, `app/build.gradle${type === 'kotlin' ? '.kts' : ''}`)
   );
+}
+
+/**
+ * Ensures `gradle.properties` at the workspace root sets daemon heap sizes
+ * large enough to compile buildSrc with the Nx project graph plugin.
+ *
+ * - `org.gradle.jvmargs=-Xmx2g` raises the Gradle daemon heap above the
+ *   512m CI default so configuration of large `projectReportAll` graphs
+ *   does not OOM.
+ * - `kotlin.daemon.jvmargs=-Xmx2g` raises the Kotlin compiler daemon heap
+ *   above the ~256m default so kotlin-dsl buildSrc (with hundreds of
+ *   generated `Accessors*.kt` files) can compile without
+ *   `OutOfMemoryError: GC overhead limit exceeded`.
+ *
+ * Existing keys in `gradle.properties` are preserved; we only append the
+ * keys that are not already set.
+ */
+function ensureDaemonHeap(cwd: string) {
+  const gradlePropertiesPath = join(cwd, 'gradle.properties');
+  const desiredEntries: Record<string, string> = {
+    'org.gradle.jvmargs': '-Xmx2g',
+    'kotlin.daemon.jvmargs': '-Xmx2g',
+  };
+
+  let content = '';
+  if (existsSync(gradlePropertiesPath)) {
+    content = readFileSync(gradlePropertiesPath, 'utf-8');
+  }
+
+  const existingKeys = new Set(
+    content
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith('#'))
+      .map((line) => line.split('=')[0].trim())
+  );
+
+  const additions: string[] = [];
+  for (const [key, value] of Object.entries(desiredEntries)) {
+    if (!existingKeys.has(key)) {
+      additions.push(`${key}=${value}`);
+    }
+  }
+
+  if (additions.length === 0) {
+    return;
+  }
+
+  const separator = !content || content.endsWith('\n') ? '' : '\n';
+  const updated = `${content}${separator}${additions.join('\n')}\n`;
+  writeFileSync(gradlePropertiesPath, updated);
 }
 
 function appendToGitignore(cwd: string, entry: string) {
